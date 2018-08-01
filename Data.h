@@ -35,8 +35,8 @@ typedef struct label{
     unsigned int addressLabel;
     /*0 for local defined label, 1 for entry, 2 for external*/
     unsigned int type;
-    label *next;
-    label *prev;
+    struct label *next;
+    struct label *prev;
 } label;
 
 /*commend contain address, row string, amount of related words,
