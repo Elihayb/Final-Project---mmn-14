@@ -1,0 +1,80 @@
+#include <stdio.h>
+#include <string.h>
+
+typedef struct member{
+    struct member *prev;
+    struct member *next;
+    char ID[10];
+    unsigned int subCost;
+    unsigned int senurity;
+} Member;
+
+ Member *addMember(Member *newNode, Member *head){
+     if (head == NULL) /*empty list*/
+         newNode->next = newNode->prev = newNode;
+     else{
+         newNode->prev = head;
+         newNode->next= head->next;
+         head->next->prev=newNode;
+         head->next = newNode;
+     }
+     return newNode;
+ }
+
+int removeMem(Member *mem){
+    if(mem==NULL)
+        return 1;
+    else
+    {
+        mem->next->prev=mem->prev;
+        mem->prev->next=mem->next;
+    }
+    return 1;
+
+}
+
+ int search(char *id,Member *node)
+ {
+     char *firstId = node->ID;
+     Member *ptr=node;
+     do{
+        if(strcmp(id,ptr->ID)==0) {
+            printf("Member with %s removed",ptr->ID);
+            removeMem(ptr);
+            return 1;
+
+        }else{
+            ptr=ptr->next;
+        }
+     }while(strcmp(firstId,ptr->ID)!=0);
+     printf("The member not found");
+     return 0;
+
+ }
+
+void printList(Member *node);
+
+ int main(){
+     Member member1={NULL,NULL,"123456789",50,10};
+     Member member2={NULL,NULL,"222222222",50,10};
+     Member member3={NULL,NULL,"987654321",50,10};
+     addMember(&member1,NULL);
+     addMember(&member3,&member1);
+     addMember(&member2,&member3);
+     printList(&member1);
+     search("222222222",&member3);
+ }
+
+ void printList(Member *node)
+{
+    char *firstId = node->ID;
+    Member *ptr=node;
+    do{
+            printf("The member ID is %s\n",ptr->ID);
+            ptr=ptr->next;
+
+    }while(strcmp(firstId,ptr->ID)!=0);
+
+    return 0;
+
+}
