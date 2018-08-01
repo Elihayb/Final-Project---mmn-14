@@ -8,6 +8,7 @@
     #define BUFFER_SIZE 81
     #define WORD_LENGTH 14
     #define MAX_WORDS_PER_COMMEND 4
+    #define MAX_DIRECT_NAME 7
 
 
 /************STRUCTS DEFINITION************/
@@ -54,7 +55,7 @@ typedef struct commend{
     struct commend *prv;
 } commend;
 
-unsigned int IC,DC,dataErrorFlag = 0;
+unsigned int IC,DC,ErrorFlag,LabelFlag = 0;
 
 /*Registers*/
 word r0,r1,r2,r3,r4,r5,r6,r7,PSW;
@@ -78,7 +79,7 @@ int validLabel(label *list, char labelName);
 
 int printLabelList(label *list);
 
-commend addToCommendTable(commend *list,unsigned int address, char sourceCode,unsigned int wordAmount,int childFlag,int *rs);
+commend addToCommendTable(commend *list,unsigned int address, char sourceCode,int childFlag,int *rs)
 
 commend newCommend();
 

@@ -2,7 +2,7 @@
 Update in 27/07/18
 Version 0.0.0.4*/
 
-#inclode <stdio.h>
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include "Data.h"
@@ -70,24 +70,25 @@ label addToLabelTable(label *label, char *name,unsigned int DC,unsigned int type
     /*check if name is null or without value*/
     if ((name==NULL)||(*name==0)){
         if (rs) *rs=-1;/*failure*/
-        return label;
+        return *label;
     }
     if ((label==NULL)||(validLabel(label,name))){/*list is empty and label are not exist */
-        if (label=newLabel()){
+        *label=newLabel();
+        if (label!=NULL){
             label->type=type;
-            strcpy(label.labelName,name);
+            strcpy(label->labelName,name);
             label->addressLabel= DC;
             if (rs) *rs=0;/*success*/
-            return label;
+            return *label;
         }
         free(label);/*free memory and return null and failure if newLabel fail*/
         if (rs) *rs=-1;/*failure*/
-        return label;
+        return *label;
     }
     else{
-        label->next = addToLabelTable(label->next, *name, DC, type,*rs);
+        *label->next = addToLabelTable(label->next, *name, DC, type,*rs);
         if (*rs) *rs=0;/*success*/
-        return label;
+        return *label;
     }
 
 }
@@ -101,7 +102,7 @@ label newLabel(){
         label->name = label->type = NULL;
         label->next = label->prev = NULL;
     }
-    return label;
+    return *label;
 }
 
 /*check if there any label with same name.
@@ -139,10 +140,10 @@ label searchLabel(label *list,char *str){
  Return:
  -1 if label is not valid.
  0 if label is valid.*/
-int validLabel(label *list, char labelName) {
+int validLabel(label *list, char *labelName) {
     int i;
     /**action = defineActionTable();*/
-    if (searchLabel(list, labelName) == NULL) {
+    if (searchLabel(*list, *labelName) == NULL) {
         for (i = 0; i < 16; i++) {/*check if label name equal to any action name */
             if (strcmp(actionTable[i].actionName, labelName) = 0) {
                 return -1;/*label is not valid*/
@@ -167,33 +168,34 @@ int printLabelList(label *list){
 
 
 /**/
-commend addToCommendTable(commend *list,unsigned int address, char sourceCode,unsigned int wordAmount,int childFlag,int *rs){
-    if((sourceCode == NULL)||(*sourceCode==0)){
+commend addToCommendTable(commend *list,unsigned int address, char sourceCode,int childFlag,int *rs){
+    if((sourceCode == NULL)||(sourceCode==0)){
         if (rs) *rs=-1;/*failure*/
-        return commend;
+        return *list;
     }
     if (list==NULL){/*list is empty*/
-        if (list=newCommend()){
+        if (*list=newCommend()){
             list->decimalAddress = address;
             strcpy(list->srcCode,sourceCode);
             wordAmount= amountOfWord(sourceCode);
-            if (childFlag==1) {
+
+            if (childFlag==0) {
                 strcpy(list->machineCode,convertToBinary(sourceCode));
             }else {
                 strcpy(list->machineCode, "NoCode");
                 list->relatedToPrvCommendFlag=0;
             }
             if (rs) *rs=0;/*success*/
-            return list;
+            return *list;
         }
         free(list);/*free memory and return null and failure if newCommend fail*/
         if (rs) *rs=-1;/*failure*/
-        return list;
+        return *list;
     }
     else{
         list->next=addToCommendTable(list->next , address,sourceCode,wordAmount,childFlag,rs);
         if (*rs) *rs=0;/*success*/
-        return list;
+        return *list;
     }
 
 }
@@ -206,9 +208,9 @@ commend newCommend(){
     if (commend) {
         commend->relatedToPrvCommendFlag = commend->machineCode  = NULL;
         commend->wordAmount = commend->srcCode = commend->decimalAddress =  NULL;
-        commend->next = label->prev = NULL;
+        commend->next = commend->prev = NULL;
     }
-    return commend;
+    return *commend;
 }
 
 int amountOfWord(char sourceCode){
