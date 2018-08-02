@@ -89,5 +89,7 @@ int amountOfWord(char sourceCode);
 char convertToBinary(char *srcCode);
 
 int printCommendList(commend *list);
+
+int errorPrint(unsigned int errId,unsigned int row);
    
 #endif /* DATA_H */

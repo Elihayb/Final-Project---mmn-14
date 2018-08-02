@@ -2,8 +2,10 @@
 #include "data.h"
 #include "first_pass.h"
 #include "second_pass.h"
+#include "output_creation.h"
 #include <stdio.h>
 #include <string.h>
+
 
 int main(int argc, char **argv) {
 
@@ -20,18 +22,18 @@ int main(int argc, char **argv) {
             fprintf(stderr, "\nUnable to open file \"%s\" in read mode\n", *argv);
             continue;
         }
-        if (firstPass(*inFile, commendList, labelList) == -1) {
-            fprintf(stderr, "\nThere is error in your \"%s\" file, please check them and try again\n", *argv);
+        if (firstPass(inFile, commendList, labelList) == -1) {
+            fprintf(stderr, "\nThere is errors in your \"%s\" file, please check them and try again\n", *argv);
             continue;
         }
-        if (secondPass(*inFile, commendList, labelList) == -1) {
-            fprintf(stderr, "\nThere is error in your \"%s\" file, please check them and try again\n", *argv);
+        if (secondPass(inFile, commendList, labelList) == -1) {
+            fprintf(stderr, "\nThere is errors in your \"%s\" file, please check them and try again\n", *argv);
             continue;
 
         }
-        if (outputCreation(*inFile, commendList, labelList) == -1) {
-            fprintf(stderr,
-                    "\nProgram fail to create output files for your \"%s\" file, please check the error and try again\n", *argv);
+        if (outputCreation(inFile, commendList, labelList) == -1) {
+            fprintf(stderr, "\nProgram fail to create output files for your \"%s\" file,"
+                            " please check the errors and try again\n", *argv);
             continue;
         }
 

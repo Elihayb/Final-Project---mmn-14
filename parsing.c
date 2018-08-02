@@ -15,9 +15,9 @@ int matchingBrackets(char *buffer)
             rcount++;
     }
     if (lcount - rcount == 0)               /* checking if the number of left brackets is equal to the left */
-        return 1;                           /* returning 1 if yes and 0 otherwise */
+        return 0;                           /* returning 0 if yes and 1 otherwise */
     else
-        return 0;
+        return 1;
 }
 
 void getString(char *buffer, char *string, int startIndex)

@@ -3,45 +3,71 @@
 #include <stdio.h>
 #include <string.h>
 
-int firstPass(FILE *f, commend *commendList, label *labelList){
+int firstPass(FILE *f, commend *commendList, label *labelList) {
     char labelName[MAX_LABEL];
-    int rs=0;/*return status flag. 0 for success and -1 for failure*/
     char directive[MAX_DIRECT_NAME];
-    IC = 0;
-    DC = 0;
+    char currentLine[BUFFER_SIZE];
+    int lineCount, i, rs, labelFlag = 0;/*return status flag. 0 for success and error ID for failure*/
+    IC = DC = 0;
 
-    while ((row != NULL)||(*row != 0)) do{
-       if (labelName = ifLabel(row)!= NULL){
-           LabelFlag = 1;
-       }
+    defineActionTable();/*set all actions with IDs*/
 
-       if(directive = ifDirective(*row)!= NULL){/*check if string or data*/
-            if (LabelFlag = 1){
-                *labelList = addToLabelTable(labelList,labelName,DC,0,&rs);
-                if ((*labelList->labelName == NULL)&&(rs !=0)){/*check if added to labels table*/
-                    fprintf(stderr,"label %s not valid",labelName);
-                }
+    while (fgets(currentLine, BUFFER_SIZE, f) != NULL) {
+        lineCount++;
 
+        if ((strcmp(currentLine, "") == 0) || (ifComment(currentLine) == 1)) {/*check if line is empty or comment*/
+            continue;
+        }
+        if (matchingBrackets(currentLine) == 0) {/*check Brackets if matching*/
+            errorPrint(3, lineCount);
+            continue;
+        }
+        if (strcpy(labelName, ifLabel(currentLine, &rs)) != NULL) {/*check if there is label*/
+            if (rs != 0) {
+                errorPrint(&rs, lineCount);
+                continue;
             }
-            addToCommendTable(commendList,IC,*row,0,&rs);
+            labelFlag = 1;
+        }
+        if (ifDirective(currentLine, &rs) != NULL) {/*check if string or data directive*/
+            if (rs != 0) {
+                errorPrint(&rs, lineCount);
+                continue;
+            }
+            addToLabelTable(labelList, labelName, DC, 0, &rs);/*add label name to labels list*/
+            if (rs != 0) {
+                errorPrint(&rs, lineCount);
+                continue;
+            }
+            addToCommendTable(commendList, IC, *currentLine, 0, &rs);/*add array to commend table*/
+            if (rs != 0) {
+                errorPrint(&rs, lineCount);
+                continue;
+            }
+        }
+        if ((*directive = *ifGlobalDirective(currentLine, &rs)) != NULL) {/*check if extern or entry directive*/
+            if (rs != 0) {
+                errorPrint(&rs, lineCount);
+                continue;
+            }
+            for (i = 1; i < strlen(directive); i++) {/*copy the label name to argument*/
+                labelName[i - 1] = directive[i];
+            }
+            if (strstr(directive, "1")) {/*1 is value for external directive*/
+                addToLabelTable(labelList,labelName,DC,2,&rs);
+                if (rs != 0) {
+                    errorPrint(&rs, lineCount);
+                    continue;
+                }
+            }/*row 9 in project doc*/
 
-           if (rs == -1){
-               ErrorFlag=1;
-           }
-       }
-       if (directive = ifGlobalDirective(*row)!=NULL){/*check if extern or entry*/
 
-       }
-       if (LabelFlag = 1) {
-           *labelList = addToLabelTable(labelList, labelName, IC, 0, &rs);
-           addToCommendTable(commendList,IC,*row,0,&rs);
-       }
+        }
 
     }
-        ErrorFlag = 1;
 
 
-
+}
 
 
 }
