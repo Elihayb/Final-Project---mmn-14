@@ -9,6 +9,8 @@
     #define WORD_LENGTH 14
     #define MAX_WORDS_PER_COMMEND 4
     #define MAX_DIRECT_NAME 7
+    #define HIGHEST_POSITIVE_VALUE 8191
+    #define HIGHEST_NEGATIVE_VALUE -8192
 
 
 /************STRUCTS DEFINITION************/
@@ -37,7 +39,6 @@ typedef struct label{
     /*0 for local defined label, 1 for entry, 2 for external*/
     unsigned int type;
     struct label *next;
-    struct label *prev;
 } label;
 
 /*commend contain address, row string, amount of related words,
