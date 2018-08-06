@@ -3,14 +3,16 @@
 #include <stdio.h>
 #include <string.h>
 
+/*need to perform code that update the counters IC and DC*/
 int firstPass(FILE *f, commend *commendList, label *labelList) {
     char labelName[MAX_LABEL];
     char directive[MAX_DIRECT_NAME];
     char currentLine[BUFFER_SIZE];
-    int lineCount, i, rs, labelFlag = 0;/*return status flag. 0 for success and error ID for failure*/
+    int lineCount=0;
+    int i, rs ,labelFlag = 0;/*return status flag. 0 for success and error ID for failure*/
     IC = DC = 0;
 
-    defineActionTable();/*set all actions with IDs*/
+    action actionTable = defineActionTable();/*set all actions with IDs*/
 
     while (fgets(currentLine, BUFFER_SIZE, f) != NULL) {
         lineCount++;
@@ -23,8 +25,8 @@ int firstPass(FILE *f, commend *commendList, label *labelList) {
             continue;
         }
         if (strcpy(labelName, ifLabel(currentLine, &rs)) != NULL) {/*check if there is label*/
-            if (rs != 0) {
-                errorPrint(&rs, lineCount);
+            if (&rs != 0) {
+                errorPrint(rs, lineCount);
                 continue;
             }
             labelFlag = 1;
@@ -44,30 +46,54 @@ int firstPass(FILE *f, commend *commendList, label *labelList) {
                 errorPrint(&rs, lineCount);
                 continue;
             }
+            continue;
         }
         if ((*directive = *ifGlobalDirective(currentLine, &rs)) != NULL) {/*check if extern or entry directive*/
             if (rs != 0) {
                 errorPrint(&rs, lineCount);
                 continue;
             }
-            for (i = 1; i < strlen(directive); i++) {/*copy the label name to argument*/
+            for (i = 1; i < strlen(directive) - 1; i++) {/*copy the label name to argument*/
                 labelName[i - 1] = directive[i];
             }
             if (strstr(directive, "1")) {/*1 is value for external directive*/
-                addToLabelTable(labelList,labelName,DC,2,&rs);
+                addToLabelTable(labelList, labelName, DC, 2, &rs);
                 if (rs != 0) {
                     errorPrint(&rs, lineCount);
                     continue;
                 }
-            }/*row 9 in project doc*/
+            }
+            if (strstr(directive, "0")) {/*0 is value for entry directive*/
+                addToLabelTable(labelList, labelName, DC, 1, &rs);
+                if (rs != 0) {
+                    errorPrint(&rs, lineCount);
+                    continue;
+                }
 
-
+            }
+            continue;
         }
+        /*this section should be care about commend line, with\without label*/
+        if (labelFlag == 1) {
+            addToLabelTable(labelList, labelName, IC, 0, &rs);
+            if (rs != 0) {
+                errorPrint(&rs, lineCount);
+                continue;
+            }
+        }
+        addToCommendTable(commendList, IC, *currentLine, 0, &rs);
+        if (rs != 0) {
+            errorPrint(&rs, lineCount);
+            continue;
+        }
+        /*row 17 - what its mean???*/
 
     }
-
+    if (&rs!=0){
+        return -1;
+    }
+    return 0;
 
 }
 
 
-}

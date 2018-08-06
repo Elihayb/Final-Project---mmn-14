@@ -166,9 +166,22 @@ int printLabelList(label *list) {
 
 /**/
 commend addToCommendTable(commend *list, unsigned int address, char sourceCode, int childFlag, int *rs) {
+    int i;
+    action actionTable = defineActionTable();
+
     if ((sourceCode == NULL) || (sourceCode == 0)) {
         if (rs) *rs = -1;/*failure*/
         return *list;
+    }
+    *rs = 2;/*status 2 return error about un-exist action name*/
+    for (i = 0; i < 16; i++) {/*check if action name is exist*/
+        if (strstr(actionTable.actionName,currentLine)!=NULL){
+            rs = 0;
+            break;
+        }
+    }
+    if (*rs != 0){/*the condition of previous loop are not not pass and the name is not valid*/
+        exit;
     }
     if (list == NULL) {/*list is empty*/
         if (*list = newCommend()) {

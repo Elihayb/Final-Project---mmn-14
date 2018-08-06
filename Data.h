@@ -80,7 +80,7 @@ int validLabel(label *list, char labelName);
 
 int printLabelList(label *list);
 
-commend addToCommendTable(commend *list,unsigned int address, char sourceCode,int childFlag,int *rs)
+commend addToCommendTable(commend *list,unsigned int address, char sourceCode,int childFlag,int *rs);
 
 commend newCommend();
 
