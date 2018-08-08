@@ -175,12 +175,12 @@ commend addToCommendTable(commend *list, unsigned int address, char sourceCode, 
     }
     *rs = 2;/*status 2 return error about un-exist action name*/
     for (i = 0; i < 16; i++) {/*check if action name is exist*/
-        if (strstr(actionTable.actionName,currentLine)!=NULL){
+        if (strstr(actionTable.actionName, currentLine) != NULL) {
             rs = 0;
             break;
         }
     }
-    if (*rs != 0){/*the condition of previous loop are not not pass and the name is not valid*/
+    if (*rs != 0) {/*the condition of previous loop are not not pass and the name is not valid*/
         exit;
     }
     if (list == NULL) {/*list is empty*/
@@ -226,8 +226,21 @@ int amountOfWord(char sourceCode) {
     /*לנתח את הפקודה ולהחליט כמה משפטים יש בפקודה*/
 }
 
-char convertToBinary(char *srcCode) {
-    /*הפונקציה הזו ממירה את השורה לבינארי בהתאם לכמות המילים הכתובות בה. השימוש בה הוא עבור machineCode במבנה פקודה*/
+/*This function convert decimal numbers to binary and print it to the file output*/
+long long printDecimalToBinary(int n,int *rs) {
+    int i;
+    char buff[WORD_LENGTH+1];
+    if (n < HIGHEST_NEGATIVE_VALUE) {
+        *rs= 17;
+        return *rs;
+    }else if (n > HIGHEST_POSITIVE_VALUE){
+        *rs= 18;
+        return *rs;
+    }/*To Do: need to create array with the value*/
+    for(i = 7; i >= 0; i--) putchar('0' + ((n >> i) & 1));
+
+    return *rs;
+
 }
 
 /**/
@@ -241,44 +254,44 @@ int printCommendList(commend *list) {
 
 /*this function save on homogeneous in error contact.
  * get row number and error id*/
-int errorPrint(unsigned int errId,unsigned int row){
-    switch(errId){
+int errorPrint(unsigned int errId, unsigned int row) {
+    switch (errId) {
         case 1:
-            fprintf(stderr,"Line: %d , missing argument",row);
+            fprintf(stderr, "Line: %d , missing argument", row);
         case 2:
-            fprintf(stderr,"Line: %d , invalid argument (cannot be instruction)",row);
+            fprintf(stderr, "Line: %d , invalid argument (cannot be instruction)", row);
         case 3:
-            fprintf(stderr,"Line: %d , invalid characters",row);
+            fprintf(stderr, "Line: %d , invalid characters", row);
         case 4:
-            fprintf(stderr,"Line: %d , invalid argument (immediate too large)",row);
+            fprintf(stderr, "Line: %d , invalid argument (immediate too large)", row);
         case 5:
-            fprintf(stderr,"Line: %d , invalid target operand (immediate)",row);
+            fprintf(stderr, "Line: %d , invalid target operand (immediate)", row);
         case 6:
-            fprintf(stderr,"Line: %d , invalid operand (immediate)",row);
+            fprintf(stderr, "Line: %d , invalid operand (immediate)", row);
         case 7:
-            fprintf(stderr,"Line: %d , undefined instruction",row);
+            fprintf(stderr, "Line: %d , undefined instruction", row);
         case 8:
-            fprintf(stderr,"Line: %d , label previously declared",row);
+            fprintf(stderr, "Line: %d , label previously declared", row);
         case 9:
-            fprintf(stderr,"Line: %d , warning - label does not start in first column",row);
+            fprintf(stderr, "Line: %d , warning - label does not start in first column", row);
         case 10:
-            fprintf(stderr,"Line: %d , invalid source operand (register)",row);
+            fprintf(stderr, "Line: %d , invalid source operand (register)", row);
         case 11:
-            fprintf(stderr,"Line: %d , invalid source operand (immediate)",row);
+            fprintf(stderr, "Line: %d , invalid source operand (immediate)", row);
         case 12:
-            fprintf(stderr,"Line: %d , invalid label",row);
+            fprintf(stderr, "Line: %d , invalid label", row);
         case 13:
-            fprintf(stderr,"Line: %d , local label cannot be declared as external",row);
+            fprintf(stderr, "Line: %d , local label cannot be declared as external", row);
         case 14:
-            fprintf(stderr,"Line: %d , label is already designated as external",row);
+            fprintf(stderr, "Line: %d , label is already designated as external", row);
         case 15:
-            fprintf(stderr,"Line: %d , undefined directive",row);
+            fprintf(stderr, "Line: %d , undefined directive", row);
         case 16:
-            fprintf(stderr,"Line: %d , missing argument in directive",row);
+            fprintf(stderr, "Line: %d , missing argument in directive", row);
         case 17:
-            fprintf(stderr,"Line: %d , data overflow (negative value too large to fit in 14 bits)",row);
+            fprintf(stderr, "Line: %d , data overflow (negative value too large to fit in 14 bits)", row);
         case 18:
-            fprintf(stderr,"Line: %d , data overflow (positive value too large to fit in 14 bits)",row);
+            fprintf(stderr, "Line: %d , data overflow (positive value too large to fit in 14 bits)", row);
         default:
             return -1;/*failure*/
     }
