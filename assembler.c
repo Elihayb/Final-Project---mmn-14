@@ -11,7 +11,7 @@ int main(int argc, char **argv) {
 
     FILE *inFile;
     struct label *labelList = NULL;
-    struct commend *commendList = NULL;
+    struct command *commendList = NULL;
 
     if (argc == 1) {
         fprintf(stderr, "\n%s: you need to specify at least one input file\n", *argv);

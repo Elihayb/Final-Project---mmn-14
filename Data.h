@@ -26,10 +26,14 @@ typedef struct word {
     unsigned param1:2;
 }word;
 
-/*action contain name and code according to page 15-16*/
+
+
+/*action contain name, code and legal method for operands according to page 15-16 and 27*/
 typedef struct action{
     char actionName[MAX_ACTION_NAME];
     unsigned int actionCode;
+    char legalMethodOprSrc[4];/*Legal method for operand source*/
+    char legalMethodOprDst[4];/*Legal method for operand destination*/
 } action;
 
 /*label contain name, address from current location of DC, type and pointers for linked list*/
