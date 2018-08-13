@@ -5,6 +5,8 @@
       <w>exsit</w>
       <w>opcode</w>
       <w>recevied</w>
+      <w>strptr</w>
+      <w>tmpptr</w>
     </words>
   </dictionary>
 </component>

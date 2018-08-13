@@ -10,9 +10,9 @@
 
 
 /*set all actions and codes for each one*/
-action defineActionTable() {
+action *defineActionTable() {
 
-    action actionTable[16];
+    static action actionTable[16];
 
     strcpy(actionTable[0].actionName, "mov");
     actionTable[0].actionCode = 0;
@@ -79,8 +79,9 @@ action defineActionTable() {
     strcpy(actionTable[15].legalMethodOprSrc, "---");
     strcpy(actionTable[15].legalMethodOprDst, "---");
 
-    return *actionTable;
+    return actionTable;
 }
+
 
 /*********************LABEL SECTION**********************/
 
@@ -98,42 +99,52 @@ action defineActionTable() {
  */
 /*To Do: need to add return errors status with rs flag*/
 label addToLabelTable(label *label, char *name, unsigned int DC, unsigned int type, int *rs) {
-    /*check if name is NULL or without value*/
-    if ((name == NULL) || (*name == 0)) {
+
+    if ((name == NULL) || (*name == 0)) {/*check if name is NULL or without value*/
         if (rs) *rs = -1;/*failure*/
         return *label;
     }
-    if ((label == NULL) || (validLabel(label, name))) {/*list is empty and label are not exist */
-        *label = newLabel();
+    if ((label == NULL) || (validLabel(label, name, rs) == 0)) {/*list is empty and label are not exist */
+
+        label = newLabel();
         if (label != NULL) {
             label->type = type;
-            strcpy(label->labelName, name);
+            label->labelName = name;
             label->addressLabel = DC;
+            label->next = NULL;
             if (rs) *rs = 0;/*success*/
+
             return *label;
+        } else {
+            free(label);/*free memory and return NULL and failure if newLabel fail*/
+            if (rs) *rs = -1;/*failure*/
+            return *label;/*return received pointer with NULL address */
         }
-        free(label);/*free memory and return NULL and failure if newLabel fail*/
-        if (rs) *rs = -1;/*failure*/
-        return *label;
     } else {
-        *label->next = addToLabelTable(label->next, *name, DC, type, *rs);
+        *label->next = addToLabelTable(label->next, name, DC, type, rs);
         if (*rs) *rs = 0;/*success*/
         return *label;
     }
-
 }
+
 
 /* allocate and initialize a new label;
    space for the label is obtained via malloc();
    return a pointer to the new label, NULL if no space available*/
-label newLabel() {
-    label *label = (label *) malloc(sizeof(label));
-    if (label) {
-        label->name = label->type = NULL;
-        label->next = NULL;
+label *newLabel() {
+    label *lbl;
+    lbl = (label *) malloc(sizeof(label));
+    if (lbl) {
+        lbl->labelName = NULL;
+        lbl->type = -1;
+        lbl->next = NULL;
+        lbl->addressLabel = -1;
+        return lbl;
     }
-    return *label;
+    free(lbl);
+    return NULL;
 }
+
 
 /*check if there any label with same name.
  Parameters:
@@ -142,150 +153,199 @@ label newLabel() {
  Return:
  pointer to label if exist.
  NULL if not exist on list.*/
-label searchLabel(label *list, char *str) {
-    char temp;/*save the first name for loop condition*/
-    strcpy(temp, label.labelName);
+label *searchLabel(label *list, char *str) {
+    label *lbl = list;
+    /*save the first name for loop condition*/
+
+
 
     if ((list == NULL) || (str == NULL) || (*str == 0)) {/*check if all parameters are valid*/
+
         return NULL;
     }
-    do {/*search loop*/
-        if (strcmp(label.labelName, str)) {
-            return label;
+    do {
+
+/*search loop*/
+
+        if (strcmp(lbl->labelName, str) == 0) {
+            return lbl;
         } else {
-            label = label.next;
+            lbl = lbl->next;
         }
 
-    } while (strcmp(label.labelName, temp) != 0);
+    } while (lbl != NULL);
 
     return NULL;/*label with same name is not exist*/
-
 }
 
+
 /*check if there are not any label with same name
- and there is not any action name or directive commend that identical in names
+ and there is not any action name or directive command that identical in names
  Parameters:
  pointer to label list.
  name of label.
  Return:
  -1 if label is not valid.
  0 if label is valid.*/
-/*To Do: need to compare between name and all registers*/
-int validLabel(label *list, char *labelName,int *rs) {
+int validLabel(label *list, char *labelName, int *rs) {
     int i;
-    char temp[3];
-    /**action = defineActionTable();*/
-    if (searchLabel(*list, *labelName) == NULL) {
-        for (i = 0; i < 16; i++) {/*check if label name equal to any action name */
-            if (strcmp(actionTable[i].actionName, labelName) = 0) {
-                *rs = -1;
-                return -1;/*label is not valid*/
-            }
-        }
-        if ((strcmp(labelName,"r0")==0)||(strcmp(labelName,"r1")==0)||(strcmp(labelName,"r2")==0)||(strcmp(labelName,"r3")==0)||(strcmp(labelName,"r4")==0)||(strcmp(labelName,"r5")==0)||(strcmp(labelName,"r6")==0)||(strcmp(labelName,"r7")==0)){
 
-        }
+    action *actionTable = defineActionTable();
 
-        if (((strcmp("string", labelName) == 0)) || ((strcmp("data",labelName) == 0))) {
-            return -1;/*label is not valid*/
-        } else if ((strcmp("entry", labelName) = 0) || (strcmp("extern", labelName)) = 0)) {
-            return -1;/*label is not valid*/
-        }
-    } else {
-        return 0;/*label is valid*/
+    if (searchLabel(list, labelName) != NULL) {/*check if label name equal to any exist label name*/
+        *rs = -1;/*TO Do: write the correct error code*/
+        return -1;/*label is not valid*/
     }
+    for (i = 0; i < 16; i++) {/*check if label name equal to any action name */
+
+        if (strcmp(actionTable[i].actionName, labelName) == 0) {
+            *rs = -1;/*TO Do: write the correct error code*/
+            return -1;/*label is not valid*/
+        }
+    }/*check if label name equal to any register name*/
+    if ((strcmp(labelName, "r0") == 0) || (strcmp(labelName, "r1") == 0) || (strcmp(labelName, "r2") == 0) ||
+        (strcmp(labelName, "r3") == 0) || (strcmp(labelName, "r4") == 0) || (strcmp(labelName, "r5") == 0) ||
+        (strcmp(labelName, "r6") == 0) || (strcmp(labelName, "r7") == 0) || (strcmp(labelName, "PSW") == 0)) {
+        *rs = -1;/*TO Do: write the correct error code*/
+        return *rs;/*label is not valid*/
+    }/*check if label name equal to any directive name*/
+    if (((strcmp("string", labelName) == 0)) || ((strcmp("data", labelName) == 0)) ||
+        ((strcmp("entry", labelName) == 0)) || ((strcmp("extern", labelName) == 0))) {
+        *rs = -1;/*TO Do: write the correct error code*/
+        return *rs;/*label is not valid*/
+
+    }
+    return *rs = 0;/*label is valid*/
+
+
 }
 
-/**/
-int printLabelList(label *list) {
-    /*צריך למצוא את הפוינטר הראשון ולהתחיל להדפיס ממנו*/
-}
-
-/*********************COMMEND SECTION**********************/
 
 
-/**/
-commend addToCommendTable(commend *list, unsigned int address, char sourceCode, int childFlag, int *rs) {
+
+
+
+/*********************COMMAND SECTION**********************/
+
+/*command addToCommandTable(command *list, unsigned int address, char sourceCode, int childFlag, int *rs)
+{
     int i;
-    action actionTable = defineActionTable();
+    action *actionTable = defineActionTable();
 
-    if ((sourceCode == NULL) || (sourceCode == 0)) {
-        if (rs) *rs = -1;/*failure*/
+    if ((sourceCode == 0) || (sourceCode == 0))
+    {
+        if (rs)
+            *rs = -1;*//*failure*//*
         return *list;
     }
-    *rs = 2;/*status 2 return error about un-exist action name*/
-    for (i = 0; i < 16; i++) {/*check if action name is exist*/
-        if (strstr(actionTable.actionName, currentLine) != NULL) {
+    *rs = 2;*//*status 2 return error about un-exist action name*//*
+    for (i = 0; i < 16; i++)
+    {*//*check if action name is exist*//*
+        if (strstr(actionTable->actionName, currentLine) != NULL)
+        {
             rs = 0;
             break;
         }
     }
-    if (*rs != 0) {/*the condition of previous loop are not not pass and the name is not valid*/
+    if (*rs != 0)
+    {*//*the condition of previous loop are not not pass and the name is not valid*//*
         exit;
     }
-    if (list == NULL) {/*list is empty*/
-        if (*list = newCommend()) {
+    if (list == NULL)
+    {*//*list is empty*//*
+        if (*list = newCommand())
+        {
             list->decimalAddress = address;
             strcpy(list->srcCode, sourceCode);
             wordAmount = amountOfWord(sourceCode);
 
-            if (childFlag == 0) {
+            if (childFlag == 0)
+            {
                 strcpy(list->machineCode, convertToBinary(sourceCode));
-            } else {
-                strcpy(list->machineCode, "NoCode");
-                list->relatedToPrvCommendFlag = 0;
             }
-            if (rs) *rs = 0;/*success*/
+            else
+            {
+                strcpy(list->machineCode, "NoCode");
+                list->relatedToPrvCommandFlag = 0;
+            }
+            if (rs)
+                *rs = 0;*//*success*//*
             return *list;
         }
-        free(list);/*free memory and return NULL and failure if newCommend fail*/
-        if (rs) *rs = -1;/*failure*/
+        free(list);*//*free memory and return NULL and failure if newCommand fail*//*
+        if (rs)
+            *rs = -1;*//*failure*//*
         return *list;
-    } else {
-        list->next = addToCommendTable(list->next, address, sourceCode, wordAmount, childFlag, rs);
-        if (*rs) *rs = 0;/*success*/
+    }
+    else
+    {
+        list->next = addToCommandTable(list->next, address, sourceCode, wordAmount, childFlag, rs);
+        if (*rs)
+            *rs = 0;*//*success*//*
         return *list;
     }
 
-}
+}*/
 
-/* allocate and initialize a new commend;
-   space for the commend is obtained via malloc();
-   return a pointer to the new commend, NULL if no space available*/
-commend newCommend() {
-    commend *commend = (commend *) malloc(sizeof(commend));
-    if (commend) {
-        commend->relatedToPrvCommendFlag = commend->machineCode = NULL;
-        commend->wordAmount = commend->srcCode = commend->decimalAddress = NULL;
-        commend->next = commend->prev = NULL;
+/* allocate and initialize a new command;
+   space for the command is obtained via malloc();
+   return a pointer to the new command, NULL if no space available*/
+command *newCommand() {
+    command *cmd = (command *) malloc(sizeof(cmd));
+    if (cmd) {
+        cmd->childFlag = 0;
+        cmd->machineCode[0] = '\0';
+        cmd->wordAmount = 0;
+        cmd->srcCode[0] = '\0';
+        cmd->decimalAddress = 0;
+        cmd->next = NULL;
     }
-    return *commend;
+    return cmd;
 }
 
 int amountOfWord(char sourceCode) {
     /*לנתח את הפקודה ולהחליט כמה משפטים יש בפקודה*/
 }
 
-/*This function convert decimal numbers to binary and print it to the file output*/
-long long printDecimalToBinary(int n,int *rs) {
-    int i;
-    char buff[WORD_LENGTH+1];
-    if (n < HIGHEST_NEGATIVE_VALUE) {
-        *rs= 17;
-        return *rs;
-    }else if (n > HIGHEST_POSITIVE_VALUE){
-        *rs= 18;
-        return *rs;
-    }/*To Do: need to create array with the value*/
-    for(i = 7; i >= 0; i--) putchar('0' + ((n >> i) & 1));
+/*This function convert decimal numbers to binary and print it to the file output.
+ * if you print a char, convert it to ascii decimal code like that:
+ * char a = 'a'; int n = (int)a;*/
+char *convertToBinary(int n, int *rs) {
 
-    return *rs;
+    int c, d, count;
+    char *pointer;
 
+    if (n<HIGHEST_NEGATIVE_VALUE){
+        *rs=21;
+        return NULL;
+    }else if(n>HIGHEST_POSITIVE_VALUE){
+        *rs=20;
+        return NULL;
+    }
+    count = 0;
+    pointer = (char *) malloc(WORD_LENGTH+1);
+
+    if (pointer == NULL)
+        exit(EXIT_FAILURE);
+
+    for (c = (WORD_LENGTH-1); c >= 0; c--) {
+        d = n >> c;
+        if (d & 1) {
+            *(pointer + count) = 1 + '0';
+        }
+        else {
+            *(pointer + count) = 0 + '0';
+        }
+        count++;
+    }
+    *(pointer + count) = '\0';
+
+    return pointer;
 }
 
 /**/
-int printCommendList(commend *list) {
-    if (list->relatedToPrvCommendFlag == 1) {/*all binary code exist in parent commend*/
+int printCommandList(command *list) {
+    if (list->childFlag == 1) {/*all binary code exist in parent command*/
         list = list->next;
     } else {
         printf("%d%10s", list->decimalAddress, list->machineCode);
@@ -296,46 +356,58 @@ int printCommendList(commend *list) {
  * get row number and error id*/
 int errorPrint(unsigned int errId, unsigned int row) {
     switch (errId) {
+        /*labels errors*/
         case 1:
-            fprintf(stderr, "Line: %d , missing argument", row);
+            fprintf(stderr, "Line: %d , invalid label - declared few times or not declared at all", row);
         case 2:
-            fprintf(stderr, "Line: %d , invalid argument (cannot be instruction)", row);
+            fprintf(stderr, "Line: %d , invalid label name - saved word", row);
         case 3:
-            fprintf(stderr, "Line: %d , invalid characters", row);
+            fprintf(stderr, "Line: %d , warning - label does not start in first column", row);
         case 4:
-            fprintf(stderr, "Line: %d , invalid argument (immediate too large)", row);
+            fprintf(stderr, "Line: %d , local label cannot be declared as external", row);
         case 5:
-            fprintf(stderr, "Line: %d , invalid target operand (immediate)", row);
+            fprintf(stderr, "Line: %d , label is already designated as external", row);
         case 6:
-            fprintf(stderr, "Line: %d , invalid operand (immediate)", row);
+            fprintf(stderr, "Line: %d , invalid label name - name large", row);
+            /*command errors*/
         case 7:
             fprintf(stderr, "Line: %d , undefined instruction", row);
         case 8:
-            fprintf(stderr, "Line: %d , label previously declared", row);
+            fprintf(stderr, "Line: %d , number of argoments is not valid", row);
         case 9:
-            fprintf(stderr, "Line: %d , warning - label does not start in first column", row);
+            fprintf(stderr, "Line: %d , need to set only 2 parameters ", row);
         case 10:
-            fprintf(stderr, "Line: %d , invalid source operand (register)", row);
+            fprintf(stderr, "Line: %d , need more parameters", row);
         case 11:
-            fprintf(stderr, "Line: %d , invalid source operand (immediate)", row);
+            fprintf(stderr, "Line: %d , invalid source operand (label)", row);
         case 12:
-            fprintf(stderr, "Line: %d , invalid label", row);
+            fprintf(stderr, "Line: %d , invalid source operand (register)", row);
         case 13:
-            fprintf(stderr, "Line: %d , local label cannot be declared as external", row);
+            fprintf(stderr, "Line: %d , invalid source operand (immediate)", row);
         case 14:
-            fprintf(stderr, "Line: %d , label is already designated as external", row);
+            fprintf(stderr, "Line: %d , invalid target operand (label)", row);
         case 15:
-            fprintf(stderr, "Line: %d , undefined directive", row);
+            fprintf(stderr, "Line: %d , invalid target operand (register)", row);
         case 16:
-            fprintf(stderr, "Line: %d , missing argument in directive", row);
+            fprintf(stderr, "Line: %d , invalid target operand (immediate)", row);
         case 17:
-            fprintf(stderr, "Line: %d , data overflow (negative value too large to fit in 14 bits)", row);
+            fprintf(stderr, "Line: %d , invalid argument (immediate too large)", row);
+            /*directive errors*/
         case 18:
+            fprintf(stderr, "Line: %d , data array contain illegal values", row);
+        case 19:
+            fprintf(stderr, "Line: %d , incorrect string array", row);
+        case 20:
             fprintf(stderr, "Line: %d , data overflow (positive value too large to fit in 14 bits)", row);
+        case 21:
+            fprintf(stderr, "Line: %d , data overflow (negative value too large to fit in 14 bits)", row);
+        case 22:
+            fprintf(stderr, "Line: %d , missing argument in directive", row);
+        case 23:
+            fprintf(stderr, "Line: %d , undefined directive", row);
         default:
             return -1;/*failure*/
     }
-    return 0;/*success*/
 }
 
 

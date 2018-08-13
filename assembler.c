@@ -8,7 +8,7 @@
 
 
 int main(int argc, char **argv) {
-
+/*To Do: need to check if files contain ".as" extension*/
     FILE *inFile;
     struct label *labelList = NULL;
     struct command *commendList = NULL;

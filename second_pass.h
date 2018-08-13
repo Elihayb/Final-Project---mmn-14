@@ -1,7 +1,7 @@
 #ifndef SECOND_PASS_H
    #define SECOND_PASS_H
    
-   int secondPass(FILE *f, commend *commendList, label *labelList);
+   int secondPass(FILE *f, command *commendList, label *labelList);
    
    
    

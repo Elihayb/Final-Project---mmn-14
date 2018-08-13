@@ -4,7 +4,7 @@
 #include <string.h>
 
 /*need to perform code that update the counters IC and DC*/
-int firstPass(FILE *f, commend *commendList, label *labelList) {
+int firstPass(FILE *f, command *commendList, label *labelList) {
     char labelName[MAX_LABEL];
     char directive[MAX_DIRECT_NAME];
     char currentLine[BUFFER_SIZE];
@@ -12,7 +12,7 @@ int firstPass(FILE *f, commend *commendList, label *labelList) {
     int i, rs ,labelFlag = 0;/*return status flag. 0 for success and error ID for failure*/
     IC = DC = 0;
 
-    action actionTable = defineActionTable();/*set all actions with IDs*/
+    action *actionTable = defineActionTable();/*set all actions with IDs*/
 
     while (fgets(currentLine, BUFFER_SIZE, f) != NULL) {
         lineCount++;

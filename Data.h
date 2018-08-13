@@ -1,16 +1,15 @@
 #ifndef DATA_H
-   #define DATA_H
+#define DATA_H
 
 /*defined all size of structures and other*/
-    #define MAX_LABEL 32
-    #define MAX_ACTION_NAME 5
-    #define MEMORY_SIZE 256
-    #define BUFFER_SIZE 81
-    #define WORD_LENGTH 14
-    #define MAX_WORDS_PER_COMMEND 4
-    #define MAX_DIRECT_NAME 7
-    #define HIGHEST_POSITIVE_VALUE 8191
-    #define HIGHEST_NEGATIVE_VALUE -8192
+#define MAX_LABEL 32
+#define MAX_ACTION_NAME 5
+#define BUFFER_SIZE 81
+#define WORD_LENGTH 14
+#define MAX_WORDS_PER_COMMAND 4
+#define MAX_DIRECT_NAME 7
+#define HIGHEST_POSITIVE_VALUE 8191
+#define HIGHEST_NEGATIVE_VALUE -8192
 
 
 /************STRUCTS DEFINITION************/
@@ -38,62 +37,54 @@ typedef struct action{
 
 /*label contain name, address from current location of DC, type and pointers for linked list*/
 typedef struct label{
-    char labelName[MAX_LABEL];
-    unsigned int addressLabel;
+    char *labelName;
+    int addressLabel;
     /*0 for local defined label, 1 for entry, 2 for external*/
-    unsigned int type;
+    int type;
     struct label *next;
 } label;
 
-/*commend contain address, row string, amount of related words,
+
+/*command contain address, row string, amount of related words,
  * binary machine code for all related words,
  * flag that check if this word is child of another word and link list pointer*/
-typedef struct commend{
+typedef struct command{
     unsigned int decimalAddress;
     char srcCode[BUFFER_SIZE];
     unsigned int wordAmount;
-    char machineCode[MAX_WORDS_PER_COMMEND*WORD_LENGTH];
-    /*check if this commend related to previous commend.
-     * All binary data save to first commend. 0 if true*/
-    unsigned int relatedToPrvCommendFlag;
-    struct commend *next;
-    struct commend *prv;
-} commend;
+    char machineCode[MAX_WORDS_PER_COMMAND*WORD_LENGTH];
+    /*check if this command related to previous command.
+     * All binary data save to first command. 0 if true*/
+    unsigned int childFlag;
+    struct command *next;
+} command;
 
-unsigned int IC,DC,ErrorFlag,LabelFlag = 0;
-
-/*Registers*/
-word r0,r1,r2,r3,r4,r5,r6,r7,PSW;
-
-/*memory array definition*/
-word memory[MEMORY_SIZE];
+unsigned int IC,DC = 0;
 
 
 /************DECLARATION SECTION************/
 
 
-action defineActionTable();
+action *defineActionTable();
 
 label addToLabelTable(label *label, char *name,unsigned int DC,unsigned int type,int *rs);
 
-label newLabel();
+label *newLabel();
 
-label searchLabel(label *list,char *str);
+label *searchLabel(label *list,char *str);
 
-int validLabel(label *list, char labelName);
+int validLabel(label *list, char *labelName, int *rs) ;
 
-int printLabelList(label *list);
+command addToCommandTable(command *list,unsigned int address, char sourceCode,int childFlag,int *rs);
 
-commend addToCommendTable(commend *list,unsigned int address, char sourceCode,int childFlag,int *rs);
-
-commend newCommend();
+command *newCommand();
 
 int amountOfWord(char sourceCode);
 
-char convertToBinary(char *srcCode);
+char *convertToBinary(int n, int *rs);
 
-int printCommendList(commend *list);
+int printCommandList(command *list);
 
 int errorPrint(unsigned int errId,unsigned int row);
-   
+
 #endif /* DATA_H */

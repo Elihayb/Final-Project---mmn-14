@@ -4,8 +4,9 @@
 #include "Data.h"
 #include <stdio.h>
 
-int outputCreation(FILE *inFile, struct commend *commendList, label *labelList);
-   
+int outputCreation(FILE *inFile, struct command *commandList, label *labelList);
+
+int printLabelList(label *lbl,char *fileName);
    
    
    
