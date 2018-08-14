@@ -4,6 +4,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include "Data.h"
+#include "parsing.h"
 
 
 /*********************ACTION SECTION**********************/
@@ -291,7 +292,7 @@ int validLabel(label *list, char *labelName, int *rs) {
    space for the command is obtained via malloc();
    return a pointer to the new command, NULL if no space available*/
 command *newCommand() {
-    command *cmd = (command *) malloc(sizeof(cmd));
+    command *cmd = (command *) malloc(sizeof(command));
     if (cmd) {
         cmd->childFlag = 0;
         cmd->machineCode[0] = '\0';
@@ -303,8 +304,62 @@ command *newCommand() {
     return cmd;
 }
 
-int amountOfWord(char sourceCode) {
-    /*לנתח את הפקודה ולהחליט כמה משפטים יש בפקודה*/
+/*the function return the number of words to write to command table
+ * for action without operands it return 1.
+ * for action with 1 operand it return 2.
+ * for action with 2 operands it return 3 if all of them are registers. else, return 4.
+ * for jump action it return 3 if all of params are registers. else, return 4.*/
+/*not checked*/
+int amountOfWord(char *sourceCode, label *labelList) {
+
+    int actionCode;
+    int *rs = 0;
+    char *operandName[3];/*array for operands and params - cannot be more than 2 operands or 1 operand and 2 params */
+
+    actionCode = getActionID(sourceCode);
+
+    if (ifCommand(sourceCode, rs) != 1) {/*check if invalid command*/
+        return -1;/*failure*/
+    }
+    if ((actionCode == 14) || (actionCode == 15)) {/*check if rts or stop actions*/
+        return 1;/*there is only first word for action*/
+
+    } else if ((actionCode == 9) || (actionCode == 10) || (actionCode == 13)) {/*check if jump addressing method*/
+        operandName[1] = getFirstParam(sourceCode, rs);
+        operandName[2] = getSecondParam(sourceCode, rs);
+
+        if ((verifyOperand(actionCode, operandName[1], 2, labelList, rs) == REGISTER_METHOD) &&
+            (verifyOperand(actionCode, operandName[2], 2, labelList, rs) == REGISTER_METHOD)) {
+            return 3;/*for jump addressing with 2 registers params. first word, label and 2 registers in the same word*/
+
+        } else {
+            return 4;/*for jump addressing with 2 params.first word, label and 2 params in 2 additional words*/
+        }
+    }
+    operandName[0] = getFirstOperand(sourceCode, rs);
+    operandName[1] = getSecondOperand(sourceCode, rs);
+    /*duplicate condition for check certainly that are only 1 operand */
+    if ((operandName[0] != NULL) && (operandName[1] == NULL) || (operandName[1] != NULL) && (operandName[0] == NULL)) {
+        return 2;/*for action with 1 operand. first word with 1 operand word*/
+    } else if ((verifyOperand(actionCode, operandName[0], 0, labelList, rs) == REGISTER_METHOD) &&
+               (verifyOperand(actionCode, operandName[1], 1, labelList, rs) == REGISTER_METHOD)) {
+        return 2;/*for action with 2 registers operands.first word and 2 registers in the same word*/
+    } else {
+        return 3;/*for action with 2 operands. first word and 2 operand*/
+    }
+}
+
+/*not checked*/
+int getActionID(char *sourceCode) {
+    action *actionTable = defineActionTable();
+    int i, actionID;
+    for (i = 0; i < 16; i++) {
+        if (strstr(sourceCode, actionTable[i].actionName) != NULL) {
+            actionID = actionTable[i].actionCode;
+            return actionID;
+        }
+    }
+    return -1;
 }
 
 /*This function convert decimal numbers to binary and print it to the file output.
@@ -315,25 +370,24 @@ char *convertToBinary(int n, int *rs) {
     int c, d, count;
     char *pointer;
 
-    if (n<HIGHEST_NEGATIVE_VALUE){
-        *rs=21;
+    if (n < HIGHEST_NEGATIVE_VALUE) {
+        *rs = 21;
         return NULL;
-    }else if(n>HIGHEST_POSITIVE_VALUE){
-        *rs=20;
+    } else if (n > HIGHEST_POSITIVE_VALUE) {
+        *rs = 20;
         return NULL;
     }
     count = 0;
-    pointer = (char *) malloc(WORD_LENGTH+1);
+    pointer = (char *) malloc(WORD_LENGTH + 1);
 
     if (pointer == NULL)
         exit(EXIT_FAILURE);
 
-    for (c = (WORD_LENGTH-1); c >= 0; c--) {
+    for (c = (WORD_LENGTH - 1); c >= 0; c--) {
         d = n >> c;
         if (d & 1) {
             *(pointer + count) = 1 + '0';
-        }
-        else {
+        } else {
             *(pointer + count) = 0 + '0';
         }
         count++;

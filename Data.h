@@ -8,8 +8,13 @@
 #define WORD_LENGTH 14
 #define MAX_WORDS_PER_COMMAND 4
 #define MAX_DIRECT_NAME 7
+#define NUM_OF_ADDRESSING_METHOD 4
 #define HIGHEST_POSITIVE_VALUE 8191
 #define HIGHEST_NEGATIVE_VALUE -8192
+#define IMMEDIATE_METHOD 0
+#define LABEL_METHOD 1
+#define REGISTER_METHOD 2
+
 
 
 /************STRUCTS DEFINITION************/
@@ -31,8 +36,8 @@ typedef struct word {
 typedef struct action{
     char actionName[MAX_ACTION_NAME];
     unsigned int actionCode;
-    char legalMethodOprSrc[4];/*Legal method for operand source*/
-    char legalMethodOprDst[4];/*Legal method for operand destination*/
+    char legalMethodOprSrc[NUM_OF_ADDRESSING_METHOD];/*Legal method for operand source*/
+    char legalMethodOprDst[NUM_OF_ADDRESSING_METHOD];/*Legal method for operand destination*/
 } action;
 
 /*label contain name, address from current location of DC, type and pointers for linked list*/
@@ -79,7 +84,9 @@ command addToCommandTable(command *list,unsigned int address, char sourceCode,in
 
 command *newCommand();
 
-int amountOfWord(char sourceCode);
+int getActionID(char *sourceCode);
+
+int amountOfWord(char *sourceCode, label *labelList);
 
 char *convertToBinary(int n, int *rs);
 

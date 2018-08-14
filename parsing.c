@@ -1,8 +1,8 @@
 #include <stdio.h>
 #include <string.h>
 #include <ctype.h>
-#include "data.h"
 #include "utilities.h"
+#include "Data.h"
 
 #define LABEL_SIZE 32
 #define STRING_SIZE 81
@@ -206,23 +206,36 @@ char *verifyStringCommand(char *buffer)
 }
 
 
-int verifyOperand(int actionID, char *operandName, int dstOrSrcFlag, label *labelTable, int *rs) {
+int verifyOperand(int actionID, char *operandName, int dstOrSrcFlag, label *labelTable, int *rs)
+{
     label *lbl;
     action *actionTable = defineActionTable();
     lbl = searchLabel(labelTable, operandName);
-    if (lbl != NULL) {/*operand is label*/
-        if ((dstOrSrcFlag == 0)||(dstOrSrcFlag == 2)) {/*check legal method for source operand*/
-            if ((strstr(actionTable[actionID].legalMethodOprSrc, "1") != NULL)||(dstOrSrcFlag == 2)) {/*verify if label is legal operand*/
-                return *rs = 0;/*valid operand*/
-            } else {
-                *rs = -1;
+    if (lbl != NULL)
+    {/*operand is label*/
+        if ((dstOrSrcFlag == 0) || (dstOrSrcFlag == 2))
+        {/*check legal method for source operand*/
+            if ((strstr(actionTable[actionID].legalMethodOprSrc, "1") != NULL) || (dstOrSrcFlag == 2))
+            {/*verify if label is legal operand*/
+                *rs = 0;
+                return LABEL_METHOD; /*valid label operand*/
+            }
+            else
+            {
+                *rs = 11;/*error code for src operand from type label*/
                 return *rs;
             }
-        } else if ((dstOrSrcFlag == 1)) {/*check legal method for destination operand*/
-            if ((strstr(actionTable[actionID].legalMethodOprDst, "1") != NULL)) {/*verify if label is legal operand*/
-                return *rs = 0;/*valid operand*/
-            } else {
-                *rs = -1;
+        }
+        else if (dstOrSrcFlag == 1)
+        {/*check legal method for destination operand*/
+            if ((strstr(actionTable[actionID].legalMethodOprDst, "1") != NULL))
+            {/*verify if label is legal operand*/
+                *rs = 0;
+                return LABEL_METHOD;/*valid label operand*/
+            }
+            else
+            {
+                *rs = 14;/*error code for dst operand from type label*/
                 return *rs;
             }
         }
@@ -230,47 +243,67 @@ int verifyOperand(int actionID, char *operandName, int dstOrSrcFlag, label *labe
     /*check if operand name equal to any register name*/
     if ((strcmp(operandName, "r0") == 0) || (strcmp(operandName, "r1") == 0) || (strcmp(operandName, "r2") == 0) ||
         (strcmp(operandName, "r3") == 0) || (strcmp(operandName, "r4") == 0) || (strcmp(operandName, "r5") == 0) ||
-        (strcmp(operandName, "r6") == 0) || (strcmp(operandName, "r7") == 0)) {
-        if (dstOrSrcFlag == 0||(dstOrSrcFlag == 2)) {/*check legal method for source operand*/
+        (strcmp(operandName, "r6") == 0) || (strcmp(operandName, "r7") == 0))
+    {
+        if (dstOrSrcFlag == 0 || (dstOrSrcFlag == 2))
+        {/*check legal method for source operand*/
             if ((strstr(actionTable[actionID].legalMethodOprSrc, "3") !=
-                 NULL)||(dstOrSrcFlag == 2)) {/*verify if register is legal operand*/
-                return *rs = 0;/*valid operand*/
-            } else {
-                *rs = -1;
+                 NULL) || (dstOrSrcFlag == 2))
+            {/*verify if register is legal operand*/
+                *rs = 0;
+                return REGISTER_METHOD;/*valid register operand*/
+            }
+            else
+            {
+                *rs = 12;/*error code for  operand according type */
                 return *rs;
             }
-        } else if ((dstOrSrcFlag == 1)) {/*check legal method for destination operand*/
+        }
+        else if (dstOrSrcFlag == 1)
+        {/*check legal method for destination operand*/
             if ((strstr(actionTable[actionID].legalMethodOprDst, "3") !=
-                 NULL)) {/*verify if register is legal operand*/
-                return *rs = 0;/*valid operand*/
-            } else {
-                *rs = -1;
+                 NULL))
+            {/*verify if register is legal operand*/
+                *rs = 0;
+                return REGISTER_METHOD;/*valid register operand*/
+            }
+            else
+            {
+                *rs = 15;/*error code for  operand according type */
                 return *rs;
             }
         }
     }
-    if (isdigit((unsigned char )*operandName) != 0) {/*check if immediate is legal operand*/
-        if ((dstOrSrcFlag == 0)||(dstOrSrcFlag == 2)) {/*check legal method for source operand*/
+    if (isdigit((unsigned char) *operandName) != 0)
+    {/*check if immediate is legal operand*/
+        if ((dstOrSrcFlag == 0) || (dstOrSrcFlag == 2))
+        {/*check legal method for source operand*/
             if ((strstr(actionTable[actionID].legalMethodOprSrc, "0") !=
-                 NULL)||(dstOrSrcFlag == 2)) {/*verify if immediate is legal operand*/
-                return *rs = 0;/*valid operand*/
-            } else {
-                *rs = -1;
+                 NULL) || (dstOrSrcFlag == 2))
+            {/*verify if immediate is legal operand*/
+                *rs = 0;
+                return IMMEDIATE_METHOD;/*valid immediate operand*/
+            }
+            else
+            {
+                *rs = 13;/*error code for operand according type */
                 return *rs;
             }
-        } else if ((dstOrSrcFlag == 1)) {/*check legal method for destination operand*/
+        }
+        else if (dstOrSrcFlag == 1)
+        {/*check legal method for destination operand*/
             if ((strstr(actionTable[actionID].legalMethodOprDst, "0") !=
-                 NULL)) {/*verify if immediate is legal operand*/
-                return *rs = 0;/*valid operand*/
-            } else {
-                *rs = -1;
+                 NULL))
+            {/*verify if immediate is legal operand*/
+                *rs = 0;
+                return IMMEDIATE_METHOD;/*valid operand*/
+            }
+            else
+            {
+                *rs = 16;/*error code for  operand according type */
                 return *rs;
             }
         }
 
     }
 }
-
-
-
-
