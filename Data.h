@@ -56,7 +56,7 @@ typedef struct label{
 typedef struct command{
     unsigned int decimalAddress;
     char srcCode[BUFFER_SIZE];
-    unsigned int wordAmount;
+     int wordAmount;
     char machineCode[MAX_WORDS_PER_COMMAND*WORD_LENGTH];
     /*check if this command related to previous command.
      * All binary data save to first command. 0 if true*/
@@ -80,7 +80,7 @@ label *searchLabel(label *list,char *str);
 
 int validLabel(label *list, char *labelName, int *rs) ;
 
-command addToCommandTable(command *list,unsigned int address, char sourceCode,int childFlag,int *rs);
+command addToCommandTable(command *list, label *labelList, unsigned int address, char *sourceCode, int childFlag, int *rs);
 
 command *newCommand();
 
@@ -88,7 +88,7 @@ int getActionID(char *sourceCode);
 
 int amountOfWord(char *sourceCode, label *labelList);
 
-char *convertToBinary(int n, int *rs);
+char *convertToBinary(int n,int size, int *rs);
 
 int printCommandList(command *list);
 

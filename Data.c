@@ -87,45 +87,45 @@ action *defineActionTable() {
 /*********************LABEL SECTION**********************/
 
 
-/*add label to labels list if it contain valid values
+/*check if there are not any label with same name
+ and there is not any action name or directive command that identical in names
  Parameters:
- pointer to label list (MULL if there is not list).
- name.
- DC value for label address.
- type of label (0 for local defined label, 1 for entry, 2 for external).
- report success flag.
+ pointer to label list.
+ name of label.
  Return:
- pointer to new label on the list.
- report success flag 0 if success, else -1.
- */
-/*To Do: need to add return errors status with rs flag*/
-label addToLabelTable(label *label, char *name, unsigned int DC, unsigned int type, int *rs) {
+ -1 if label is not valid.
+ 0 if label is valid.*/
+int validLabel(label *list, char *labelName, int *rs) {
+    int i;
 
-    if ((name == NULL) || (*name == 0)) {/*check if name is NULL or without value*/
-        if (rs) *rs = -1;/*failure*/
-        return *label;
+    action *actionTable = defineActionTable();
+
+    if (searchLabel(list, labelName) != NULL) {/*check if label name equal to any exist label name*/
+        *rs = -1;/*TO Do: write the correct error code*/
+        return -1;/*label is not valid*/
     }
-    if ((label == NULL) || (validLabel(label, name, rs) == 0)) {/*list is empty and label are not exist */
+    for (i = 0; i < 16; i++) {/*check if label name equal to any action name */
 
-        label = newLabel();
-        if (label != NULL) {
-            label->type = type;
-            label->labelName = name;
-            label->addressLabel = DC;
-            label->next = NULL;
-            if (rs) *rs = 0;/*success*/
-
-            return *label;
-        } else {
-            free(label);/*free memory and return NULL and failure if newLabel fail*/
-            if (rs) *rs = -1;/*failure*/
-            return *label;/*return received pointer with NULL address */
+        if (strcmp(actionTable[i].actionName, labelName) == 0) {
+            *rs = -1;/*TO Do: write the correct error code*/
+            return -1;/*label is not valid*/
         }
-    } else {
-        *label->next = addToLabelTable(label->next, name, DC, type, rs);
-        if (*rs) *rs = 0;/*success*/
-        return *label;
+    }/*check if label name equal to any register name*/
+    if ((strcmp(labelName, "r0") == 0) || (strcmp(labelName, "r1") == 0) || (strcmp(labelName, "r2") == 0) ||
+        (strcmp(labelName, "r3") == 0) || (strcmp(labelName, "r4") == 0) || (strcmp(labelName, "r5") == 0) ||
+        (strcmp(labelName, "r6") == 0) || (strcmp(labelName, "r7") == 0) || (strcmp(labelName, "PSW") == 0)) {
+        *rs = -1;/*TO Do: write the correct error code*/
+        return *rs;/*label is not valid*/
+    }/*check if label name equal to any directive name*/
+    if (((strcmp("string", labelName) == 0)) || ((strcmp("data", labelName) == 0)) ||
+        ((strcmp("entry", labelName) == 0)) || ((strcmp("extern", labelName) == 0))) {
+        *rs = -1;/*TO Do: write the correct error code*/
+        return *rs;/*label is not valid*/
+
     }
+    return *rs = 0;/*label is valid*/
+
+
 }
 
 
@@ -180,106 +180,95 @@ label *searchLabel(label *list, char *str) {
 }
 
 
-/*check if there are not any label with same name
- and there is not any action name or directive command that identical in names
+
+
+
+
+
+/*add label to labels list if it contain valid values
  Parameters:
- pointer to label list.
- name of label.
+ pointer to label list (MULL if there is not list).
+ name.
+ DC value for label address.
+ type of label (0 for local defined label, 1 for entry, 2 for external).
+ report success flag.
  Return:
- -1 if label is not valid.
- 0 if label is valid.*/
-int validLabel(label *list, char *labelName, int *rs) {
-    int i;
+ pointer to new label on the list.
+ report success flag 0 if success, else -1.
+ */
+/*To Do: need to add return errors status with rs flag*/
+label addToLabelTable(label *label, char *name, unsigned int DC, unsigned int type, int *rs) {
 
-    action *actionTable = defineActionTable();
-
-    if (searchLabel(list, labelName) != NULL) {/*check if label name equal to any exist label name*/
-        *rs = -1;/*TO Do: write the correct error code*/
-        return -1;/*label is not valid*/
+    if ((name == NULL) || (*name == 0)) {/*check if name is NULL or without value*/
+        if (rs) *rs = -1;/*failure*/
+        return *label;
     }
-    for (i = 0; i < 16; i++) {/*check if label name equal to any action name */
+    if (validLabel(label, name, rs) != 0) {
+        return *label;/*invalid label name*/
+    }
+    if (label == NULL) {/*list is empty and label are not exist */
 
-        if (strcmp(actionTable[i].actionName, labelName) == 0) {
-            *rs = -1;/*TO Do: write the correct error code*/
-            return -1;/*label is not valid*/
+        label = newLabel();
+        if (label != NULL) {
+            label->type = type;
+            label->labelName = name;
+            label->addressLabel = DC;
+            label->next = NULL;
+            if (rs) *rs = 0;/*success*/
+
+            return *label;
+        } else {
+            free(label);/*free memory and return NULL and failure if newLabel fail*/
+            if (rs) *rs = -1;/*failure*/
+            return *label;/*return received pointer with NULL address */
         }
-    }/*check if label name equal to any register name*/
-    if ((strcmp(labelName, "r0") == 0) || (strcmp(labelName, "r1") == 0) || (strcmp(labelName, "r2") == 0) ||
-        (strcmp(labelName, "r3") == 0) || (strcmp(labelName, "r4") == 0) || (strcmp(labelName, "r5") == 0) ||
-        (strcmp(labelName, "r6") == 0) || (strcmp(labelName, "r7") == 0) || (strcmp(labelName, "PSW") == 0)) {
-        *rs = -1;/*TO Do: write the correct error code*/
-        return *rs;/*label is not valid*/
-    }/*check if label name equal to any directive name*/
-    if (((strcmp("string", labelName) == 0)) || ((strcmp("data", labelName) == 0)) ||
-        ((strcmp("entry", labelName) == 0)) || ((strcmp("extern", labelName) == 0))) {
-        *rs = -1;/*TO Do: write the correct error code*/
-        return *rs;/*label is not valid*/
-
+    } else {
+        *label->next = addToLabelTable(label->next, name, DC, type, rs);
+        if (*rs) *rs = 0;/*success*/
+        return *label;
     }
-    return *rs = 0;/*label is valid*/
-
-
 }
-
-
-
-
-
 
 /*********************COMMAND SECTION**********************/
 
-/*command addToCommandTable(command *list, unsigned int address, char sourceCode, int childFlag, int *rs)
-{
+/*command addToCommandTable(command *list, label *labelList, unsigned int address, char *sourceCode, int childFlag, int *rs) {
     int i;
     action *actionTable = defineActionTable();
 
-    if ((sourceCode == 0) || (sourceCode == 0))
-    {
+    if ((sourceCode == NULL) || (*sourceCode == 0)) {
         if (rs)
             *rs = -1;*//*failure*//*
         return *list;
     }
-    *rs = 2;*//*status 2 return error about un-exist action name*//*
-    for (i = 0; i < 16; i++)
-    {*//*check if action name is exist*//*
-        if (strstr(actionTable->actionName, currentLine) != NULL)
-        {
-            rs = 0;
-            break;
-        }
+    if (getActionID(sourceCode) == -1) {
+        *rs = 7;*//*status 2 return error about un-exist action name*//*
+        return *list;
     }
-    if (*rs != 0)
-    {*//*the condition of previous loop are not not pass and the name is not valid*//*
-        exit;
+    if (ifCommand(sourceCode, rs) != 1) {
+        return *list;*//*rs return the error code from function*//*
     }
-    if (list == NULL)
-    {*//*list is empty*//*
-        if (*list = newCommand())
-        {
+    if (list == NULL) {*//*list is empty*//*
+        list = newCommand();
+        if (list != NULL) {
             list->decimalAddress = address;
             strcpy(list->srcCode, sourceCode);
-            wordAmount = amountOfWord(sourceCode);
-
-            if (childFlag == 0)
-            {
-                strcpy(list->machineCode, convertToBinary(sourceCode));
-            }
-            else
-            {
+            list->wordAmount= amountOfWord(sourceCode,labelList);
+*//*To Do: need to fill the machineCode filed with relevant data*//*
+          *//*  if (childFlag == 0) {
+                strcpy(list->machineCode, convertToBinary(sourceCode,WORD_LENGTH-2,rs));
+            } else {
                 strcpy(list->machineCode, "NoCode");
-                list->relatedToPrvCommandFlag = 0;
+                list->childFlag = 0;
             }
             if (rs)
-                *rs = 0;*//*success*//*
-            return *list;
+                *rs = 0;*//**//*success*//**//*
+            return *list;*//*
         }
         free(list);*//*free memory and return NULL and failure if newCommand fail*//*
         if (rs)
             *rs = -1;*//*failure*//*
         return *list;
-    }
-    else
-    {
+    } else {
         list->next = addToCommandTable(list->next, address, sourceCode, wordAmount, childFlag, rs);
         if (*rs)
             *rs = 0;*//*success*//*
@@ -365,7 +354,7 @@ int getActionID(char *sourceCode) {
 /*This function convert decimal numbers to binary and print it to the file output.
  * if you print a char, convert it to ascii decimal code like that:
  * char a = 'a'; int n = (int)a;*/
-char *convertToBinary(int n, int *rs) {
+char *convertToBinary(int n, int sizeOfBits, int *rs) {
 
     int c, d, count;
     char *pointer;
@@ -378,12 +367,12 @@ char *convertToBinary(int n, int *rs) {
         return NULL;
     }
     count = 0;
-    pointer = (char *) malloc(WORD_LENGTH + 1);
+    pointer = (char *) malloc((size_t) (sizeOfBits + 1));
 
     if (pointer == NULL)
         exit(EXIT_FAILURE);
 
-    for (c = (WORD_LENGTH - 1); c >= 0; c--) {
+    for (c = (sizeOfBits - 1); c >= 0; c--) {
         d = n >> c;
         if (d & 1) {
             *(pointer + count) = 1 + '0';

@@ -16,4 +16,6 @@ add_executable(Final_Project___mmn_14
         parsing.c
         parsing.h
         second_pass.h
-        secondPass.c)
+        secondPass.c
+        utilities.c
+        utilities.h)

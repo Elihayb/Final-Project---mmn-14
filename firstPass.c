@@ -2,6 +2,7 @@
 #include "data.h"
 #include <stdio.h>
 #include <string.h>
+#include "utilities.h"
 
 /*need to perform code that update the counters IC and DC*/
 int firstPass(FILE *f, command *commendList, label *labelList) {
