@@ -90,6 +90,8 @@ int amountOfWord(char *sourceCode, label *labelList);
 
 char *convertToBinary(int n,int size, int *rs);
 
+int *setARE(char *sourceCode,label *labelList);
+
 int printCommandList(command *list);
 
 int errorPrint(unsigned int errId,unsigned int row);

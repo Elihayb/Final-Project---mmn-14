@@ -304,6 +304,5 @@ int verifyOperand(int actionID, char *operandName, int dstOrSrcFlag, label *labe
                 return *rs;
             }
         }
-
     }
 }

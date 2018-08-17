@@ -190,7 +190,7 @@ label *searchLabel(label *list, char *str) {
  pointer to label list (MULL if there is not list).
  name.
  DC value for label address.
- type of label (0 for local defined label, 1 for entry, 2 for external).
+ type of label (0 for local defined label, 1 for entry, 2 for external, 3 for data).
  report success flag.
  Return:
  pointer to new label on the list.
@@ -231,51 +231,49 @@ label addToLabelTable(label *label, char *name, unsigned int DC, unsigned int ty
 
 /*********************COMMAND SECTION**********************/
 
-/*command addToCommandTable(command *list, label *labelList, unsigned int address, char *sourceCode, int childFlag, int *rs) {
-    int i;
-    action *actionTable = defineActionTable();
+command
+addToCommandTable(command *list, label *labelList, unsigned int address, char *sourceCode, int childFlag, int *rs) {
 
-    if ((sourceCode == NULL) || (*sourceCode == 0)) {
+    if ((sourceCode == NULL) || (*sourceCode == 0)) {/*check if line is NULL or without value*/
         if (rs)
-            *rs = -1;*//*failure*//*
+            *rs = -1;/*failure*/
         return *list;
     }
     if (getActionID(sourceCode) == -1) {
-        *rs = 7;*//*status 2 return error about un-exist action name*//*
+        *rs = 7;/*status 2 return error about un-exist action name*/
         return *list;
     }
     if (ifCommand(sourceCode, rs) != 1) {
-        return *list;*//*rs return the error code from function*//*
+        return *list;/*rs return the error code from function*/
     }
-    if (list == NULL) {*//*list is empty*//*
+    if (list == NULL) {/*list is empty*/
         list = newCommand();
         if (list != NULL) {
             list->decimalAddress = address;
             strcpy(list->srcCode, sourceCode);
-            list->wordAmount= amountOfWord(sourceCode,labelList);
-*//*To Do: need to fill the machineCode filed with relevant data*//*
-          *//*  if (childFlag == 0) {
-                strcpy(list->machineCode, convertToBinary(sourceCode,WORD_LENGTH-2,rs));
+            list->wordAmount = amountOfWord(sourceCode, labelList);
+/*To Do: need to fill the machineCode filed with relevant data*/
+            if (childFlag == 0) {
+                strcpy(list->machineCode, convertToBinary(*sourceCode, WORD_LENGTH - 2, rs));
             } else {
                 strcpy(list->machineCode, "NoCode");
                 list->childFlag = 0;
             }
             if (rs)
-                *rs = 0;*//**//*success*//**//*
-            return *list;*//*
+                *rs = 0;/*success*/
+            return *list;
         }
-        free(list);*//*free memory and return NULL and failure if newCommand fail*//*
+        free(list);/*free memory and return NULL and failure if newCommand fail*/
         if (rs)
-            *rs = -1;*//*failure*//*
+            *rs = -1;/*failure*/
         return *list;
     } else {
-        list->next = addToCommandTable(list->next, address, sourceCode, wordAmount, childFlag, rs);
+        *list->next = addToCommandTable(list, labelList, address, sourceCode, 1, rs);
         if (*rs)
-            *rs = 0;*//*success*//*
+            *rs = 0;/*success*/
         return *list;
     }
-
-}*/
+}
 
 /* allocate and initialize a new command;
    space for the command is obtained via malloc();
@@ -296,7 +294,7 @@ command *newCommand() {
 /*the function return the number of words to write to command table
  * for action without operands it return 1.
  * for action with 1 operand it return 2.
- * for action with 2 operands it return 3 if all of them are registers. else, return 4.
+ * for action with 2 operands it return 2 if all of them are registers. else, return 3.
  * for jump action it return 3 if all of params are registers. else, return 4.*/
 /*not checked*/
 int amountOfWord(char *sourceCode, label *labelList) {
@@ -338,6 +336,9 @@ int amountOfWord(char *sourceCode, label *labelList) {
     }
 }
 
+/*function get the buffer and search which action it contain.
+ * return the action ID as int.
+ * return -1 if is not matching to any action */
 /*not checked*/
 int getActionID(char *sourceCode) {
     action *actionTable = defineActionTable();
@@ -351,40 +352,121 @@ int getActionID(char *sourceCode) {
     return -1;
 }
 
+/*function return the ARE code for relevant word
+ * it get the buffer and label list.
+ * return array with ARE values in cells respectively of amount Of Words*/
+int *setARE(char *sourceCode, label *labelList) {
+    int actionCode = getActionID(sourceCode);
+    int amountOfWords = amountOfWord(sourceCode, labelList);
+    int i, *rs = 0;
+    static int returnArrayCods[amountOfWords];/*create static array to return the values*/
+    returnArrayCods[amountOfWords] = {0};/*zero the static array for reuse*/
+    char *operandName;
+    label *lbl;
+
+    if (ifCommand(sourceCode, rs) != 1) {
+        return NULL;
+    }
+    if (amountOfWords == 1) {/*word that contain only action and ARE should be 00*/
+        returnArrayCods[0] = 0;
+        return returnArrayCods;
+    }
+
+    for (i = 0; i < amountOfWords; i++) {
+        if (i == 0) {
+            returnArrayCods[i] = 0;/*ARE for first word is always 00*/
+        }
+        /*ARE for word 2 and 3 in jump action*/
+        if ((actionCode == 9) || (actionCode == 10) || (actionCode == 13)) {
+            operandName = getFirstOperand(sourceCode, rs);
+            lbl = searchLabel(labelList, operandName);
+            if (i == 1) {
+                if (lbl != NULL) {
+                    if (lbl->type == 2) {/*check if external label and return 01 for ARE*/
+                        returnArrayCods[i] = 1;
+                    } else {/*operand label in jump action is always 10*/
+                        returnArrayCods[i] = 2;
+                    }
+                }
+            }/*parameters section*/
+            if ((i == 2) || (i == 3)) {
+                if (amountOfWords == 3) {/*check if params are registers*/
+                    returnArrayCods[i] = 0;/*ARE for registers is always 00*/
+                }
+                if (i == 2) {
+                    operandName = getFirstParam(sourceCode, rs);
+                } else {
+                    operandName = getSecondParam(sourceCode, rs);
+                }
+                lbl = searchLabel(labelList, operandName);
+                if (lbl != NULL) {
+                    if (lbl->type == 2) {/*check if external label param and return 01 for ARE*/
+                        returnArrayCods[i] = 1;
+                    } else {/*local or entry param label in jump action is always 10*/
+                        returnArrayCods[i] = 2;
+                    }
+                } else {/*for immediate method and register the ARE are always 0*/
+                    returnArrayCods[i] = 0;
+                }
+            }
+        }/*ARE for word 2 and 3 in regular action*/
+        if (i == 1) {
+            operandName = getFirstOperand(sourceCode, rs);
+        } else {
+            operandName = getSecondOperand(sourceCode, rs);
+        }
+        lbl = searchLabel(labelList, operandName);
+        if (lbl != NULL) {
+            if ((lbl->type == 3) || (lbl->type == 1)) {/*check if entry or data label operand and return 10 for ARE*/
+                returnArrayCods[i] = 2;
+                if (lbl->type == 2) {/*check if external label param and return 01 for ARE*/
+                    returnArrayCods[i] = 1;
+                } else if (lbl->type == 0) {/*local  label action is  00*/
+                    returnArrayCods[i] = 0;
+                }
+            } else {/*for immediate method and register the ARE are always 0*/
+                returnArrayCods[i] = 0;
+            }
+        }
+    }
+    return returnArrayCods;
+}
+
+
 /*This function convert decimal numbers to binary and print it to the file output.
  * if you print a char, convert it to ascii decimal code like that:
  * char a = 'a'; int n = (int)a;*/
-char *convertToBinary(int n, int sizeOfBits, int *rs) {
+    char *convertToBinary(int n, int sizeOfBits, int *rs) {
 
-    int c, d, count;
-    char *pointer;
+        int c, d, count;
+        char *pointer;
 
-    if (n < HIGHEST_NEGATIVE_VALUE) {
-        *rs = 21;
-        return NULL;
-    } else if (n > HIGHEST_POSITIVE_VALUE) {
-        *rs = 20;
-        return NULL;
-    }
-    count = 0;
-    pointer = (char *) malloc((size_t) (sizeOfBits + 1));
-
-    if (pointer == NULL)
-        exit(EXIT_FAILURE);
-
-    for (c = (sizeOfBits - 1); c >= 0; c--) {
-        d = n >> c;
-        if (d & 1) {
-            *(pointer + count) = 1 + '0';
-        } else {
-            *(pointer + count) = 0 + '0';
+        if (n < HIGHEST_NEGATIVE_VALUE) {
+            *rs = 21;
+            return NULL;
+        } else if (n > HIGHEST_POSITIVE_VALUE) {
+            *rs = 20;
+            return NULL;
         }
-        count++;
-    }
-    *(pointer + count) = '\0';
+        count = 0;
+        pointer = (char *) malloc((size_t) (sizeOfBits + 1));
 
-    return pointer;
-}
+        if (pointer == NULL)
+            exit(EXIT_FAILURE);
+
+        for (c = (sizeOfBits - 1); c >= 0; c--) {
+            d = n >> c;
+            if (d & 1) {
+                *(pointer + count) = 1 + '0';
+            } else {
+                *(pointer + count) = 0 + '0';
+            }
+            count++;
+        }
+        *(pointer + count) = '\0';
+
+        return pointer;
+    }
 
 /**/
 int printCommandList(command *list) {
@@ -396,7 +478,8 @@ int printCommandList(command *list) {
 }
 
 /*this function save on homogeneous in error contact.
- * get row number and error id*/
+ * get row number and error id
+ * and print the error with line number*/
 int errorPrint(unsigned int errId, unsigned int row) {
     switch (errId) {
         /*labels errors*/
