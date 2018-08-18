@@ -436,46 +436,190 @@ int *setARE(char *sourceCode, label *labelList) {
 /*This function convert decimal numbers to binary and print it to the file output.
  * if you print a char, convert it to ascii decimal code like that:
  * char a = 'a'; int n = (int)a;*/
-    char *convertToBinary(int n, int sizeOfBits, int *rs) {
+char *convertToBinary(int n, int sizeOfBits, int *rs) {
 
-        int c, d, count;
-        char *pointer;
+    int c, d, count;
+    char *pointer;
 
-        if (n < HIGHEST_NEGATIVE_VALUE) {
-            *rs = 21;
-            return NULL;
-        } else if (n > HIGHEST_POSITIVE_VALUE) {
-            *rs = 20;
-            return NULL;
-        }
-        count = 0;
-        pointer = (char *) malloc((size_t) (sizeOfBits + 1));
-
-        if (pointer == NULL)
-            exit(EXIT_FAILURE);
-
-        for (c = (sizeOfBits - 1); c >= 0; c--) {
-            d = n >> c;
-            if (d & 1) {
-                *(pointer + count) = 1 + '0';
-            } else {
-                *(pointer + count) = 0 + '0';
-            }
-            count++;
-        }
-        *(pointer + count) = '\0';
-
-        return pointer;
+    if (n < HIGHEST_NEGATIVE_VALUE) {
+        *rs = 21;
+        return NULL;
+    } else if (n > HIGHEST_POSITIVE_VALUE) {
+        *rs = 20;
+        return NULL;
     }
+    count = 0;
+    pointer = (char *) malloc((size_t) (sizeOfBits + 1));
 
-/**/
-int printCommandList(command *list) {
-    if (list->childFlag == 1) {/*all binary code exist in parent command*/
-        list = list->next;
-    } else {
-        printf("%d%10s", list->decimalAddress, list->machineCode);
+    if (pointer == NULL)
+        exit(EXIT_FAILURE);
+
+    for (c = (sizeOfBits - 1); c >= 0; c--) {
+        d = n >> c;
+        if (d & 1) {
+            *(pointer + count) = 1 + '0';
+        } else {
+            *(pointer + count) = 0 + '0';
+        }
+        count++;
     }
+    *(pointer + count) = '\0';
+
+    return pointer;
 }
+
+/*function build word with only data and ARE filed.
+ * it get buffer line, labels list, number of child word and status flag
+ * number of child word should be large then 0. 0 save for first word
+ * return array with binary value*/
+char *buildChildWord(char *buffer, label *labelList, int numOfChildWord, int *rs) {
+    int actionID = getActionID(buffer);
+    int *ARE = setARE(buffer, labelList);
+    char *strAfterConvert;
+    char *returnStr[WORD_LENGTH + 1];
+    char *firstOperandName = getFirstOperand(buffer,rs);
+    char *secondOperandName = getSecondOperand(buffer,rs);
+    int i,registerNum,q;
+
+    strAfterConvert = convertToBinary(ARE[numOfChildWord], 2, rs);
+    for (i = 0; i < WORD_LENGTH + 1; i++) {
+        if (i < 2) {/*ser ARE bits*/
+            *returnStr[i] = strAfterConvert[i];
+        }
+        if ((verifyOperand(actionID,firstOperandName,0,labelList,rs)==REGISTER_METHOD)&&
+            (verifyOperand(actionID,secondOperandName,1,labelList,rs)==REGISTER_METHOD)){
+            for (registerNum=0 ;registerNum<8;registerNum++){/*search the register number*/
+                sprintf(strAfterConvert,"%d",i);
+                if (strstr(strAfterConvert,firstOperandName)!=NULL){
+                    break;
+                }
+            }
+            strAfterConvert=convertToBinary(registerNum,6,rs);
+
+        }
+
+
+    }
+    return *returnStr;
+}
+
+/*function get the buffer , labels list and type flag.
+ * type will be 0 for first word. 1 for child word. 2 for data word.
+ * return words array with binary value */
+char *buildWord(char *buffer, label *labelList, int type, int *rs) {
+    int amountWords = amountOfWord(buffer, labelList);
+    static char *wordArray[amountWords][WORD_LENGTH + 1] = {0};
+    int actionID = getActionID(buffer);
+    int *ARE = setARE(buffer, labelList);
+    char *strAfterConvert;
+    char *operandName;
+    int i, j, q;
+
+    for (i = 0; i < amountWords; i++) {
+        for (j = 0; j < 2; j++) {/*set ARE to word string*/
+            strAfterConvert = convertToBinary(ARE[i], 2, rs);
+            /*strAfterConvert[3]='\0';*/
+            wordArray[i][j] = (char *) strAfterConvert[j];
+        }
+        if (i == 0) {/*first word*/
+            operandName = getFirstOperand(buffer, rs);
+            for (j; j < 4; j++) {/*set addressing method for dst operand */
+                q = 0;
+                if ((actionID == 9) || (actionID == 10) || (actionID == 13)) {
+                    strAfterConvert = convertToBinary(JUMP_METHOD, 2, rs);/*write addressing method 2 to dst filed*/
+                    wordArray[i][j] = (char *) strAfterConvert[q];
+                } else if (verifyOperand(actionID, operandName, 1, labelList, rs) == IMMEDIATE_METHOD) {
+                    strAfterConvert = convertToBinary(IMMEDIATE_METHOD, 2, rs);/*write addressing method to dst filed*/
+                    wordArray[i][j] = (char *) strAfterConvert[q];
+
+                } else if (verifyOperand(actionID, operandName, 1, labelList, rs) == LABEL_METHOD) {
+                    strAfterConvert = convertToBinary(LABEL_METHOD, 2, rs);/*write addressing method to dst filed*/
+                    wordArray[i][j] = (char *) strAfterConvert[q];
+
+                } else if (verifyOperand(actionID, operandName, 1, labelList, rs) == REGISTER_METHOD) {
+                    strAfterConvert = convertToBinary(REGISTER_METHOD, 2, rs);/*write addressing method to dst filed*/
+                    wordArray[i][j] = (char *) strAfterConvert[q];
+                }
+            }
+            operandName = getSecondOperand(buffer, rs);
+            for (j; j < 6; j++) {/*set addressing method for src operand */
+                q = 0;
+                if ((actionID == 9) || (actionID == 10) || (actionID == 13)) {
+                    strAfterConvert = convertToBinary(0, 2, rs);/*write 00 addressing method 2 to src filed*/
+                    wordArray[i][j] = (char *) strAfterConvert[q];
+                } else if (verifyOperand(actionID, operandName, 0, labelList, rs) == IMMEDIATE_METHOD) {
+                    strAfterConvert = convertToBinary(IMMEDIATE_METHOD, 2, rs);/*write addressing method to dst filed*/
+                    wordArray[i][j] = (char *) strAfterConvert[q];
+
+                } else if (verifyOperand(actionID, operandName, 0, labelList, rs) == LABEL_METHOD) {
+                    strAfterConvert = convertToBinary(LABEL_METHOD, 2, rs);/*write addressing method to dst filed*/
+                    wordArray[i][j] = (char *) strAfterConvert[q];
+
+                } else if (verifyOperand(actionID, operandName, 0, labelList, rs) == REGISTER_METHOD) {
+                    strAfterConvert = convertToBinary(REGISTER_METHOD, 2, rs);/*write addressing method to dst filed*/
+                    wordArray[i][j] = (char *) strAfterConvert[q];
+                }
+            }
+            for (j; j < 10; j++) {/*set action code*/
+                q = 0;
+                strAfterConvert = convertToBinary(actionID, 4, rs);/*write 00 addressing method 2 to src filed*/
+                wordArray[i][j] = (char *) strAfterConvert[q];
+            }
+            if ((actionID == 9) || (actionID == 10) || (actionID == 13)) {/*set params addressing method*/
+                operandName = getFirstParam(buffer, rs);
+                for (j; j < 12; j++) {/*set addressing method for first parameter */
+                    q = 0;
+
+                    if (verifyOperand(actionID, operandName, 2, labelList, rs) == IMMEDIATE_METHOD) {
+                        strAfterConvert = convertToBinary(IMMEDIATE_METHOD, 2, rs);
+                        /*write addressing method to dst filed*/
+                        wordArray[i][j] = (char *) strAfterConvert[q];
+
+                    } else if (verifyOperand(actionID, operandName, 2, labelList, rs) == LABEL_METHOD) {
+                        strAfterConvert = convertToBinary(LABEL_METHOD, 2, rs);
+                        /*write addressing method to dst filed*/
+                        wordArray[i][j] = (char *) strAfterConvert[q];
+
+                    } else if (verifyOperand(actionID, operandName, 2, labelList, rs) == REGISTER_METHOD) {
+                        strAfterConvert = convertToBinary(REGISTER_METHOD, 2, rs);
+                        /*write addressing method to dst filed*/
+                        wordArray[i][j] = (char *) strAfterConvert[q];
+                    }
+                }
+                operandName = getSecondParam(buffer, rs);
+                for (j; j < 14; j++) {/*set addressing method for second parameter */
+                    q = 0;
+
+                    if (verifyOperand(actionID, operandName, 2, labelList, rs) == IMMEDIATE_METHOD) {
+                        strAfterConvert = convertToBinary(IMMEDIATE_METHOD, 2, rs);
+                        /*write addressing method to dst filed*/
+                        wordArray[i][j] = (char *) strAfterConvert[q];
+
+                    } else if (verifyOperand(actionID, operandName, 2, labelList, rs) == LABEL_METHOD) {
+                        strAfterConvert = convertToBinary(LABEL_METHOD, 2, rs);
+                        /*write addressing method to dst filed*/
+                        wordArray[i][j] = (char *) strAfterConvert[q];
+
+                    } else if (verifyOperand(actionID, operandName, 2, labelList, rs) == REGISTER_METHOD) {
+                        strAfterConvert = convertToBinary(REGISTER_METHOD, 2, rs);
+                        /*write addressing method to dst filed*/
+                        wordArray[i][j] = (char *) strAfterConvert[q];
+                    }
+                }
+            }
+            wordArray[i][WORD_LENGTH] = '\0';/*end of string*/
+        }
+        if (i > 0) {
+            strAfterConvert = buildChildWord(buffer, labelList, i, rs);
+            for (j = 0; j < WORD_LENGTH; j++) {
+                wordArray[i][j] = (char *) strAfterConvert[j];
+            }
+        }
+
+    }
+    return (char *) wordArray;
+}
+
 
 /*this function save on homogeneous in error contact.
  * get row number and error id

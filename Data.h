@@ -13,7 +13,8 @@
 #define HIGHEST_NEGATIVE_VALUE -8192
 #define IMMEDIATE_METHOD 0
 #define LABEL_METHOD 1
-#define REGISTER_METHOD 2
+#define JUMP_METHOD 2
+#define REGISTER_METHOD 3
 
 
 
@@ -92,7 +93,6 @@ char *convertToBinary(int n,int size, int *rs);
 
 int *setARE(char *sourceCode,label *labelList);
 
-int printCommandList(command *list);
 
 int errorPrint(unsigned int errId,unsigned int row);
 

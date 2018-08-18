@@ -159,7 +159,7 @@ int *verifyDataCommand(char *buffer)
                 else if (index[0] != ',')                            /* making sure there is , char after each number */
                     return NULL;
             }
-            else if (index[0] == ',')                         /* goint to the next number and storing it in the array */
+            else if (index[0] == ',')                         /* going to the next number and storing it in the array */
             {
                 index++;
                 index = skipSpcaes(index);
@@ -205,7 +205,10 @@ char *verifyStringCommand(char *buffer)
         return NULL;
 }
 
-
+/*function get action code, operand name to analysis, flag for dst or src operand, labels list and status flag
+ * flag for dst or src operand get 0 for source operand.
+ * 1 for destination operand and 2 for jump action parameters
+ * */
 int verifyOperand(int actionID, char *operandName, int dstOrSrcFlag, label *labelTable, int *rs)
 {
     label *lbl;

@@ -11,7 +11,7 @@ int outputCreation(FILE *inFile, struct commend *commendList, label *labelList){
 
 int printLabelList(label *lbl,char *fileName) {
 
-    char *fn = malloc(strlen(fileName+4));/*Allocate a string name with enough space for the extensions.*/
+    char *fn = malloc(strlen(fileName+5));/*Allocate a string name with enough space for the extensions.*/
     FILE *outExt=NULL;
     FILE *outEnt=NULL;
 
@@ -40,4 +40,9 @@ int printLabelList(label *lbl,char *fileName) {
     if (outExt!=NULL){
         fclose(outExt);
     }
+}
+
+/**/
+int printCommandList(command *list,FILE *f) {
+
 }
