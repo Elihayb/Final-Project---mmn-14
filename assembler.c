@@ -6,9 +6,15 @@
 #include <stdio.h>
 #include <string.h>
 
-
+int main(){
+    printf ("Hello world");
+    return 0;
+}
+/*
 int main(int argc, char **argv) {
-/*To Do: need to check if files contain ".as" extension*/
+*/
+/*To Do: need to check if files contain ".as" extension*//*
+
     FILE *inFile;
     struct label *labelList = NULL;
     struct command *commendList = NULL;
@@ -38,7 +44,9 @@ int main(int argc, char **argv) {
         }
 
 
-    }return 0;/*success*/
+    }return 0;*/
+/*success*//*
 
 
-}
+
+}*/

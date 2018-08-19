@@ -65,11 +65,8 @@ typedef struct command{
     struct command *next;
 } command;
 
-unsigned int IC,DC = 0;
-
-
 /************DECLARATION SECTION************/
-
+extern unsigned int IC, DC;
 
 action *defineActionTable();
 
@@ -93,6 +90,13 @@ char *convertToBinary(int n,int size, int *rs);
 
 int *setARE(char *sourceCode,label *labelList);
 
+char *buildChildWord(char *buffer, label *labelList, int numOfChildWord, int *rs);
+
+char *registerWord(char *buffer, label *labelList, int numOfChildWord, int *rs);
+
+char *buildWord(char *buffer, label *labelList,int *rs);
+
+char *buildDataWord(char *buffer, int *rs);
 
 int errorPrint(unsigned int errId,unsigned int row);
 
