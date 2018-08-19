@@ -252,6 +252,74 @@ label *searchLabel(label *list, char *str)
     return NULL;/*label with same name is not exist*/
 }
 
+/*********************DATA TABLE SECTION**********************/
+
+/* allocate and initialize a new label;
+   space for the label is obtained via malloc();
+   return a pointer to the new label, NULL if no space available*/
+data *newData()
+{
+    data *dt;
+    dt = (data *) malloc (sizeof (data));
+    if (dt)
+    {
+        dt->type = -1;
+        dt->address = -1;
+        dt->binaryCode = NULL;
+        dt->sourceCode = NULL;
+        dt->lbl = NULL;
+        dt->next = NULL;
+        dt->sizeOfArray = -1;
+        return dt;
+    }
+    free (dt);
+    return NULL;
+}
+
+data addToDataTable(data *dataTable, label *dataLabel, char *sourceCode, int address, int strOrNun, int *rs)
+{
+    data *dt;
+    int arraySize = 0;
+
+    if (strOrNun == 0)
+    {/*check if data from type string*/
+        if (verifyStringCommand (sourceCode, rs) == NULL)
+        {
+            return NULL;
+        }
+        arraySize = strlen (verifyStringCommand (sourceCode, rs));
+    }
+    else if (strOrNun == 1)
+    {/*check if data from type numbers*/
+        if (verifyDataCommand (sourceCode, rs) == NULL)
+        {
+            return NULL;
+        }
+        arraySize = verifyDataCommand (sourceCode, rs)[0];
+    }
+
+    if (dataTable == NULL)
+    {/*empty data list*/
+        dt = newData ();
+        if (dt)
+        {
+            dt->lbl = dataLabel;
+            dt->sourceCode = sourceCode;
+            dt->address = address;
+            dt->type = strOrNun;
+            dt->binaryCode = buildDataWord (sourceCode, rs);
+            dt->sizeOfArray = arraySize;
+            dt->next = NULL;
+        }
+        free (dt);
+    }
+    else
+    {
+        *dataTable->next = addToDataTable (dataTable, dataLabel, sourceCode, address, strOrNun, rs);
+    }
+    return *dt;
+}
+
 
 /*********************COMMAND SECTION**********************/
 
@@ -853,19 +921,57 @@ char *buildWord(char *buffer, label *labelList, int *rs)
 /*function get source code line and status flag and return array with all numbers as binary*/
 char *buildDataWord(char *buffer, int *rs)
 {
-    int *data = verifyDataCommand (buffer, rs);
-    int i, j, numOfCells = data[0];
+    int strOrNun = -1;
+    int *data = 0;
+    char *str = NULL;
+    char charToConvert;
+    int i, j, numOfCells = 0;
     char *strAfterConvert;
-    static char returnArray[BUFFER_SIZE][WORD_LENGTH + 1]={0};
+    static char returnArray[BUFFER_SIZE][WORD_LENGTH + 1] = {0};
 
-    for (i = 1 ; i < numOfCells ; i++)
+    /*check if data from type string*/
+    if (verifyStringCommand (buffer, rs) != NULL)
     {
-        strAfterConvert = convertToBinary (data[i], 14, rs);
-        for (j = 0 ; j < WORD_LENGTH ; j++)
+        str = verifyStringCommand (buffer, rs);
+        numOfCells = strlen (str);
+        strOrNun = 0;
+    }/*check if data from type numbers*/
+    else if (verifyDataCommand (buffer, rs) != NULL)
+    {
+        data = verifyDataCommand (buffer, rs);
+        numOfCells = data[0];
+        strOrNun = 1;
+    }
+    else
+    {
+        return NULL;
+    }
+
+    if ((strOrNun == 0) && (str != NULL))/*string array*/
+    {
+        for (i = 0 ; i < numOfCells ; i++)
         {
-            returnArray[i - 1][j] = strAfterConvert[j];
+            charToConvert = str[i];
+            int n = (int) charToConvert;
+            strAfterConvert = convertToBinary (n, 14, rs);
+            for (j = 0 ; j < WORD_LENGTH ; j++)
+            {
+                returnArray[i][j] = strAfterConvert[j];
+            }
+            returnArray[i][WORD_LENGTH] = '\0';
         }
-        returnArray[i][WORD_LENGTH]='\0';
+    }
+    if (strOrNun == 1)/*data array*/
+    {
+        for (i = 1 ; i == numOfCells ; i++)/*start from 1. cell 0 contain the numbers of cells*/
+        {
+            strAfterConvert = convertToBinary (data[i], 14, rs);
+            for (j = 0 ; j < WORD_LENGTH ; j++)
+            {
+                returnArray[i - 1][j] = strAfterConvert[j];
+            }
+            returnArray[i][WORD_LENGTH] = '\0';
+        }
     }
     return *returnArray;
 }

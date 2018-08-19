@@ -1,6 +1,8 @@
 #ifndef DATA_H
 #define DATA_H
 
+#include <stdlib.h>
+#include <stdio.h>
 /*defined all size of structures and other*/
 #define MAX_LABEL 32
 #define MAX_ACTION_NAME 5
@@ -50,6 +52,17 @@ typedef struct label{
     struct label *next;
 } label;
 
+typedef struct data{
+    int type;
+    label *lbl;
+    char *sourceCode;
+    char *binaryCode;
+    int address;
+    int sizeOfArray;
+    struct data *next;
+
+}data;
+
 
 /*command contain address, row string, amount of related words,
  * binary machine code for all related words,
@@ -77,6 +90,10 @@ label *newLabel();
 label *searchLabel(label *list,char *str);
 
 int validLabel(label *list, char *labelName, int *rs) ;
+
+data *newData();
+
+data addToDataTable(data *dataTable,label *dataLabel, char *sourceCode, int address, int strOrNun, int *rs);
 
 command addToCommandTable(command *list, label *labelList, unsigned int address, char *sourceCode, int childFlag, int *rs);
 
