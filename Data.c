@@ -92,7 +92,7 @@ action *defineActionTable()
  pointer to label list (MULL if there is not list).
  name.
  DC value for label address.
- type of label (0 for local defined label, 1 for entry, 2 for external, 3 for data).
+ type of label (0 for local defined label, 1 for entry, 2 for external).
  report success flag.
  Return:
  pointer to new label on the list.
@@ -276,7 +276,7 @@ data *newData()
     return NULL;
 }
 
-data addToDataTable(data *dataTable, label *dataLabel, char *sourceCode, int address, int strOrNun, int *rs)
+data addToDataTable(data *dataTable, char *dataLabel, char *sourceCode, int address, int strOrNun, int *rs)
 {
     data *dt;
     int arraySize = 0;
@@ -285,7 +285,8 @@ data addToDataTable(data *dataTable, label *dataLabel, char *sourceCode, int add
     {/*check if data from type string*/
         if (verifyStringCommand (sourceCode, rs) == NULL)
         {
-            return NULL;
+            *rs =-1;
+            return *dataTable;
         }
         arraySize = strlen (verifyStringCommand (sourceCode, rs));
     }
@@ -293,7 +294,8 @@ data addToDataTable(data *dataTable, label *dataLabel, char *sourceCode, int add
     {/*check if data from type numbers*/
         if (verifyDataCommand (sourceCode, rs) == NULL)
         {
-            return NULL;
+            *rs =-1;
+            return *dataTable;
         }
         arraySize = verifyDataCommand (sourceCode, rs)[0];
     }
@@ -310,20 +312,27 @@ data addToDataTable(data *dataTable, label *dataLabel, char *sourceCode, int add
             dt->binaryCode = buildDataWord (sourceCode, rs);
             dt->sizeOfArray = arraySize;
             dt->next = NULL;
+            return *dataTable;
         }
+        *rs =-1;
         free (dt);
+        return *dataTable;
     }
     else
     {
         *dataTable->next = addToDataTable (dataTable, dataLabel, sourceCode, address, strOrNun, rs);
+        if (rs)
+        {
+            rs = 0;
+        }
+        return *dataTable;
     }
-    return *dt;
 }
 
 
 /*********************COMMAND SECTION**********************/
 
-command addToCommandTable(command *list, label *labelList, unsigned int address, char *sourceCode, int childFlag, int *rs)
+command addToCommandTable(command *list, label *labelList, unsigned int address, char *sourceCode, int *rs)
 {
 
     if ((sourceCode == NULL) || (*sourceCode == 0))
@@ -347,18 +356,9 @@ command addToCommandTable(command *list, label *labelList, unsigned int address,
         if (list != NULL)
         {
             list->decimalAddress = address;
-            strcpy (list->srcCode, sourceCode);
+            list->srcCode= sourceCode;
             list->wordAmount = amountOfWord (sourceCode, labelList);
-            /*To Do: need to fill the machineCode filed with relevant data*/
-            if (childFlag == 0)
-            {
-                strcpy (list->machineCode, convertToBinary (*sourceCode, WORD_LENGTH - 2, rs));
-            }
-            else
-            {
-                strcpy (list->machineCode, "NoCode");
-                list->childFlag = 0;
-            }
+            list->machineCode = buildWord (sourceCode,labelList,rs);
             if (rs)
                 *rs = 0;/*success*/
             return *list;
@@ -370,7 +370,7 @@ command addToCommandTable(command *list, label *labelList, unsigned int address,
     }
     else
     {
-        *list->next = addToCommandTable (list, labelList, address, sourceCode, 1, rs);
+        *list->next = addToCommandTable (list, labelList, address, sourceCode, rs);
         if (*rs)
             *rs = 0;/*success*/
         return *list;
@@ -385,7 +385,6 @@ command *newCommand()
     command *cmd = (command *) malloc (sizeof (command));
     if (cmd)
     {
-        cmd->childFlag = 0;
         cmd->machineCode[0] = '\0';
         cmd->wordAmount = 0;
         cmd->srcCode[0] = '\0';
@@ -421,8 +420,8 @@ int amountOfWord(char *sourceCode, label *labelList)
     }
     else if ((actionCode == 9) || (actionCode == 10) || (actionCode == 13))
     {/*check if jump addressing method*/
-        operandName[1] = getFirstParam (sourceCode, rs);
-        operandName[2] = getSecondParam (sourceCode, rs);
+        operandName[1] = getFirstParam (sourceCode);
+        operandName[2] = getSecondParam (sourceCode);
 
         if ((verifyOperand (actionCode, operandName[1], 2, labelList, rs) == REGISTER_METHOD) &&
                 (verifyOperand (actionCode, operandName[2], 2, labelList, rs) == REGISTER_METHOD))
@@ -436,7 +435,7 @@ int amountOfWord(char *sourceCode, label *labelList)
         }
     }
     operandName[0] = getFirstOperand (sourceCode, rs);
-    operandName[1] = getSecondOperand (sourceCode, rs);
+    operandName[1] = getSecondOperand (sourceCode);
     /*duplicate condition for check certainly that are only 1 operand */
     if ((operandName[0] != NULL) && (operandName[1] == NULL) || (operandName[1] != NULL) && (operandName[0] == NULL))
     {
@@ -528,11 +527,11 @@ int *setARE(char *sourceCode, label *labelList)
                 }
                 if (i == 2)
                 {
-                    operandName = getFirstParam (sourceCode, rs);
+                    operandName = getFirstParam (sourceCode);
                 }
                 else
                 {
-                    operandName = getSecondParam (sourceCode, rs);
+                    operandName = getSecondParam (sourceCode);
                 }
                 lbl = searchLabel (labelList, operandName);
                 if (lbl != NULL)
@@ -558,7 +557,7 @@ int *setARE(char *sourceCode, label *labelList)
         }
         else
         {
-            operandName = getSecondOperand (sourceCode, rs);
+            operandName = getSecondOperand (sourceCode);
         }
         lbl = searchLabel (labelList, operandName);
         if (lbl != NULL)
@@ -640,14 +639,14 @@ char *buildChildWord(char *buffer, label *labelList, int numOfChildWord, int *rs
     char *AREAfterConvert[3];
     static char returnStr[WORD_LENGTH + 1] = {0};
     char *firstOperandName = getFirstOperand (buffer, rs);
-    char *secondOperandName = getSecondOperand (buffer, rs);
+    char *secondOperandName = getSecondOperand (buffer);
     int i = 0, typeAction = 0, immediateValue = 0;
     label *lbl;
 
     if ((actionID == 9) || (actionID == 10) || (actionID == 13) && (numOfChildWord > 1))
     {
-        firstOperandName = getFirstParam (buffer, rs);
-        secondOperandName = getSecondParam (buffer, rs);
+        firstOperandName = getFirstParam (buffer);
+        secondOperandName = getSecondParam (buffer);
         typeAction = 2;
     }
     if ((numOfChildWord == 1) || ((typeAction == 2) && (numOfChildWord == 2)))/*for first operand or first param*/
@@ -714,14 +713,14 @@ char *registerWord(char *buffer, label *labelList, int numOfChildWord, int *rs)
     int actionID = getActionID (buffer);
     char *strAfterConvert[WORD_LENGTH - 1] = {0};/*without ARE bits*/
     char *firstOperandName = getFirstOperand (buffer, rs);
-    char *secondOperandName = getSecondOperand (buffer, rs);
+    char *secondOperandName = getSecondOperand (buffer);
     int typeAction = 0;
     int registerNum1, registerNum2 = 0;
 
     if ((actionID == 9) || (actionID == 10) || (actionID == 13) && (numOfChildWord > 1))
     {
-        firstOperandName = getFirstParam (buffer, rs);
-        secondOperandName = getSecondParam (buffer, rs);
+        firstOperandName = getFirstParam (buffer);
+        secondOperandName = getSecondParam (buffer);
         typeAction = 2;
     }
     if ((numOfChildWord == 1) || (typeAction == 2))
@@ -766,8 +765,7 @@ char *registerWord(char *buffer, label *labelList, int numOfChildWord, int *rs)
     return *strAfterConvert;
 }
 
-/*function get the buffer , labels list and type flag.
- * type will be 0 for first word and 1 for data word.
+/*function get the buffer and labels list.
  * return words array with binary value */
 char *buildWord(char *buffer, label *labelList, int *rs)
 {
@@ -816,7 +814,7 @@ char *buildWord(char *buffer, label *labelList, int *rs)
                     wordArray[i][j] = strAfterConvert[q];
                 }
             }
-            operandName = getSecondOperand (buffer, rs);
+            operandName = getSecondOperand (buffer);
             for (j ; j < 6 ; j++)
             {/*set addressing method for src operand */
                 q = 0;
@@ -851,7 +849,7 @@ char *buildWord(char *buffer, label *labelList, int *rs)
             }
             if ((actionID == 9) || (actionID == 10) || (actionID == 13))
             {/*set params addressing method*/
-                operandName = getFirstParam (buffer, rs);
+                operandName = getFirstParam (buffer);
                 for (j ; j < 12 ; j++)
                 {/*set addressing method for first parameter */
                     q = 0;
@@ -877,7 +875,7 @@ char *buildWord(char *buffer, label *labelList, int *rs)
                         wordArray[i][j] = strAfterConvert[q];
                     }
                 }
-                operandName = getSecondParam (buffer, rs);
+                operandName = getSecondParam (buffer);
                 for (j ; j < 14 ; j++)
                 {/*set addressing method for second parameter */
                     q = 0;
@@ -918,7 +916,7 @@ char *buildWord(char *buffer, label *labelList, int *rs)
     return *wordArray;
 }
 
-/*function get source code line and status flag and return array with all numbers as binary*/
+/*function get source code line and status flag and return array with all numbers as binary with width of 14 bits*/
 char *buildDataWord(char *buffer, int *rs)
 {
     int strOrNun = -1;
@@ -979,7 +977,7 @@ char *buildDataWord(char *buffer, int *rs)
 /*this function save on homogeneous in error contact.
  * get row number and error id
  * and print the error with line number*/
-int errorPrint(unsigned int errId, unsigned int row)
+int errorPrint( int errId, unsigned int row)
 {
     switch (errId)
     {
@@ -1000,7 +998,7 @@ int errorPrint(unsigned int errId, unsigned int row)
         case 7:
             fprintf (stderr, "Line: %d , undefined instruction", row);
         case 8:
-            fprintf (stderr, "Line: %d , number of argoments is not valid", row);
+            fprintf (stderr, "Line: %d , number of arguments is not valid", row);
         case 9:
             fprintf (stderr, "Line: %d , need to set only 2 parameters ", row);
         case 10:

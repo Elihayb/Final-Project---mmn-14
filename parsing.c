@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <ctype.h>
+#include <stdlib.h>
 #include "utilities.h"
 #include "Data.h"
 
@@ -65,7 +66,7 @@ char *ifLabel(char *buffer, int *RS)                                            
 /* a function that checks if there is directive and if so it returns the type and NULL otherwise */
 char *ifDirective(char *buffer, int *RS)
 {
-    int label_index, i, dot_index, j = 0;                                       /* RS variable stands for error code. */
+    int label_index, i, dot_index;                                              /* RS variable stands for error code. */
     static char directive[20] = {'\0'};
     directive[0] = '\0';
     if (ifLabel (buffer, RS) != NULL)                                                     /* in case there is a label */
@@ -165,16 +166,29 @@ start:
 }
 
 /* a function the checks the syntax of the .data command and returns array with the numeric parameters on success */
-/* and NULL of failure */
+/* and NULL of failure, the first element of the array is the number of its elements */
 int *verifyDataCommand(char *buffer, int *RS)
 {                                                                               /* RS variable stands for error code. */
-    char *index = buffer;                                                              /* index pointer to the buffer */
-    static int arr[10];                                                              /* array to store the parameters */
-    int *arrptr = arr;                                                                    /* pointer to the arr array */
+    char *index = buffer, *temp;                                                       /* index pointer to the buffer */
+    static int *arr;                                                                 /* array to store the parameters */
+    int *arrptr;
+    int numOfElements = 0;
     if ((ifDirective (buffer, RS) != NULL) && (strcmp ("data", ifDirective (buffer, RS)) == 0)) /* testing  directive */
     {
         index = strstr (buffer, "data");                           /* advancing the index to point to the data string */
         index = nextStr (index);                                            /* advancing the index to the next string */
+        temp = index;
+        while (temp[0] != '\0')
+        {
+            skipSpcaes (temp);
+            if (isdigit (temp[0]))
+                numOfElements++;
+            temp++;
+        }
+        arr = malloc ((numOfElements + 1) * sizeof (int));
+        arrptr = arr;
+        arr[0] = numOfElements;
+        arrptr++;
         while (index[0] != '\0')
         {
             skipSpcaes (index);                                             /* making the index skip the white spaces */
@@ -340,26 +354,136 @@ int verifyOperand(int actionID, char *operandName, int dstOrSrcFlag, label *labe
     }
 }
 
-int ifCommand (char *sourceCode, int *rs){
-    return 0;
+/* a function that returns the first operand of an action and NULL if there is not a proper action */
+char *getFirstOperand(char *buffer, int *rs)
+{
+    static char operand[MAX_LABEL];
+    char *index = NULL;
+    char *opIndex = operand;                                                       /* pointer to the operand variable */
+    operand[0] = '\0';
+    action *acn = defineActionTable ();                                /* variable that contains all the action names */
+    int i = 0;
+    for (i = 0 ; i < 16 ; i++)                                                           /* searching for the command */
+    {
+        if (strstr (buffer, acn[i].actionName) != NULL)
+        {
+            index = strstr (buffer, acn[i].actionName);
+            break;
+        }
+    }
+    if (index == NULL)
+    {
+        *rs = 7;
+        return NULL;
+    }
+    index = nextStr (index);
+    while (index[0] != EOF && index[0] != ' ')                      /* storing the command  and returning the command */
+    {
+        if (index[0] == ',')
+            break;
+        else
+        {
+            if (index[0] != '#')
+            {
+                opIndex[0] = index[0];
+                opIndex++;
+                index++;
+            }
+            else
+                index++;
+        }
+    }
+    return operand;
 }
 
-char *getFirstOperand(char *buffer,int *rs){
-    static char p[4] = "abc";
-    return p;
+/* a function that returns the first operand of an action and NULL if there is no second operand */
+char *getSecondOperand(char *buffer)
+{
+    static char operand[MAX_LABEL];
+    char *index = NULL;
+    char *opIndex = operand;                                                       /* pointer to the operand variable */
+    operand[0] = '\0';
+    index = strstr (buffer, ",");                                                      /* pointing to the , character */
+    if (index == NULL)                                                                  /* if there is no , character */
+        return NULL;
+    index++;
+    while (index[0] != '\0')                                                     /* storing and returning the operand */
+    {
+        if (index[0] != ' ' && index[0] != '#')
+        {
+            opIndex[0] = index[0];
+            opIndex++;
+            index++;
+        }
+        else
+            index++;
+    }
+    return operand;
 }
 
-char *getSecondOperand(char *buffer,int *rs){
-    static char p[4] = "abc";
-    return p;
+/* a function that returns the first param of an action and NULL if there is no  param */
+char *getFirstParam(char *buffer)
+{
+    static char param[MAX_LABEL];
+    char *index = NULL;
+    char *opIndex = param;                                                         /* pointer to the operand variable */
+    param[0] = '\0';
+    index = strstr (buffer, "(");                                                      /* pointing to the , character */
+    if (index == NULL)                                                                  /* if there is no , character */
+        return NULL;
+    index++;
+    index = skipSpcaes (index);
+    while (index[0] != EOF)                      /* storing the command  and returning the command */
+    {
+        if (index[0] == ',')
+            break;
+        else
+        {
+            if (index[0] != '#' && index[0] != ' ' && index[0] != ')')
+            {
+                opIndex[0] = index[0];
+                opIndex++;
+                index++;
+            }
+            else
+                index++;
+        }
+    }
+    return param;
 }
 
-char *getFirstParam(char *buffer,int *rs){
-    static char p[4] = "abc";
-    return p;
+/* a function that returns the second param of an action and NULL if there is no first param */
+char *getSecondParam(char *buffer)
+{
+    static char *param;
+    if (getFirstParam (buffer) ==
+            NULL)                                                  /* if there is no first param */
+        return NULL;
+    param = getSecondOperand (buffer);
+    param[strlen (param) - 1] = '\0';
+    return param;
 }
 
-char *getSecondParam(char *buffer,int *rs){
-    static char p[4] = "abc";
-    return p;
+int ifCommand(char *buffer, int *rs)
+{
+    char command[BUFFER_SIZE] = {'\0'};
+    char *index = buffer;
+    if (ifLabel (buffer, rs) != NULL)
+        index = nextStr (index);
+    getString2 (index, command, ' ');
+    if ((strcmp (command, "jmp") == 0) || (strcmp (command, "jsr") == 0) || (strcmp (command, "bne") == 0))
+    {
+        if (matchingBrackets (index) == 1)
+        {
+            *rs = 24;
+            return 0;
+        }
+        index = nextStr2 (index);
+        index = skipSpcaes (index);
+        while (index[1] != '(')
+            index++;
+        if (index[0] == ' ')
+            return 0;                                                                     /* spaces between arguments */
+        index++;
+    }
 }

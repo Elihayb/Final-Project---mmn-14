@@ -1,12 +1,17 @@
 #include "parsing.h"
 #include "data.h"
+#include "output_creation.h"
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
 
-int outputCreation(FILE *inFile, struct commend *commendList, label *labelList)
+int outputCreation(char *fileName, data *dataList, command *commendList, label *labelList,int *rs)
 {
+    printCommandList (commendList,fileName);
+    printDataTable (dataList,fileName);
+    printLabelList (labelList,fileName);
 
+    return 0;
 
 }
 
@@ -37,7 +42,6 @@ int printDataTable(data *dataTable, char *fn)
             str[WORD_LENGTH] = '\0';
             if ((outExt = fopen (fileName, "a")) != NULL)
             {
-
                 fprintf (outExt, "%4d - %14s", dataTable->address,str);
             }
             dataTable = dataTable->next;

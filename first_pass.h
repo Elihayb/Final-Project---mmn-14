@@ -3,7 +3,7 @@
 
 #include <stdio.h>
 
-int firstPass(FILE *f, command *commandList, label *labelList);
+int firstPass(FILE *f, command *commandList, data *dataList, label *labelList, int *rs);
    
    
    

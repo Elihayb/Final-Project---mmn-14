@@ -17,14 +17,14 @@ char *verifyStringCommand(char *buffer, int *RS);
 
 int verifyOperand(int actionID, char *operandName, int dstOrSrcFlag, label *labelTable, int *RS);
 
-int ifCommand(char *buffer,int *rs);
+char *getFirstOperand(char *buffer, int *rs);
 
-char *getFirstOperand(char *buffer,int *rs);
+char *getSecondOperand(char *buffer);
 
-char *getSecondOperand(char *buffer,int *rs);
+char *getFirstParam(char *buffer);
 
-char *getFirstParam(char *buffer,int *rs);
+char *getSecondParam(char *buffer);
 
-char *getSecondParam(char *buffer,int *rs);
+int ifCommand(char *buffer, int *rs);
 
 #endif /* PARSING_H */

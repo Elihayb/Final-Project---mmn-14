@@ -4,7 +4,7 @@
 int matchingBrackets(char *buffer)
 {
     int lcount = 0, rcount = 0, i;
-    for (i = 0; i < strlen(buffer); i++)
+    for (i = 0 ; i < strlen (buffer) ; i++)
     {
         if (buffer[i] == '(')               /* counting left brackets */
             lcount++;
@@ -22,6 +22,13 @@ char *nextStr(char *strIndex)
     while (strIndex[0] != ' ')
         strIndex++;
     while (strIndex[0] == ' ')
+        strIndex++;
+    return strIndex;
+}
+
+char *nextStr2(char *strIndex)
+{
+    while (strIndex[0] != ' ')
         strIndex++;
     return strIndex;
 }
@@ -49,10 +56,20 @@ void getString(char *buffer, char *string, int startIndex)
     }
 }
 
+void getString2(char *index, char *string, char end)
+{
+    while(index[0] != end)
+    {
+        string[0] = index[0];
+        string++;
+        index++;
+    }
+}
+
 int char_index(char *buffer, char chr) /* a function that returns the index of a character in a string */
 {                                       /* if there is no such character then the function returns -1 */
     int i, index = -1;
-    for (i = 0; i < strlen(buffer); i++)
+    for (i = 0 ; i < strlen (buffer) ; i++)
     {
         if (buffer[i] == chr)
         {

@@ -23,15 +23,6 @@
 /************STRUCTS DEFINITION************/
 
 
-/*define word struct according to page 15*/
-typedef struct word {
-    unsigned ERA:2;
-    unsigned operandDst:2;
-    unsigned operandSrc:2;
-    unsigned opcode:4;
-    unsigned param2:2;
-    unsigned param1:2;
-}word;
 
 
 
@@ -54,7 +45,7 @@ typedef struct label{
 
 typedef struct data{
     int type;
-    label *lbl;
+    char *lbl;
     char *sourceCode;
     char *binaryCode;
     int address;
@@ -69,12 +60,9 @@ typedef struct data{
  * flag that check if this word is child of another word and link list pointer*/
 typedef struct command{
     unsigned int decimalAddress;
-    char srcCode[BUFFER_SIZE];
+    char *srcCode;
      int wordAmount;
-    char machineCode[MAX_WORDS_PER_COMMAND*WORD_LENGTH];
-    /*check if this command related to previous command.
-     * All binary data save to first command. 0 if true*/
-    unsigned int childFlag;
+    char *machineCode;
     struct command *next;
 } command;
 
@@ -93,9 +81,9 @@ int validLabel(label *list, char *labelName, int *rs) ;
 
 data *newData();
 
-data addToDataTable(data *dataTable,label *dataLabel, char *sourceCode, int address, int strOrNun, int *rs);
+data addToDataTable(data *dataTable,char *dataLabel, char *sourceCode, int address, int strOrNun, int *rs);
 
-command addToCommandTable(command *list, label *labelList, unsigned int address, char *sourceCode, int childFlag, int *rs);
+command addToCommandTable(command *list, label *labelList, unsigned int address, char *sourceCode, int *rs);
 
 command *newCommand();
 
@@ -115,6 +103,6 @@ char *buildWord(char *buffer, label *labelList,int *rs);
 
 char *buildDataWord(char *buffer, int *rs);
 
-int errorPrint(unsigned int errId,unsigned int row);
+int errorPrint( int errId,unsigned int row);
 
 #endif /* DATA_H */
