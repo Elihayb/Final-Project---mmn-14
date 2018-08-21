@@ -7,6 +7,7 @@ include_directories(.)
 
 add_executable(Final_Project___mmn_14
         assembler.c
+        main.c
         Data.c
         Data.h
         first_pass.h

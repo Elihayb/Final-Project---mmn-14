@@ -58,7 +58,6 @@ char *ifLabel(char *buffer, int *RS)                                            
     }
     else
     {
-        *RS = 6;
         return NULL;
     }
 }
@@ -264,33 +263,50 @@ char *verifyStringCommand(char *buffer, int *RS)
 
 int verifyOperand(int actionID, char *operandName, int dstOrSrcFlag, label *labelTable, int *rs)
 {
+
     label *lbl;
+    int i;
     action *actionTable = defineActionTable ();
     lbl = searchLabel (labelTable, operandName);
+    if (operandName == NULL)
+    {
+        return -1;
+    }
+
     if (lbl != NULL)
     {/*operand is label*/
         if ((dstOrSrcFlag == 0) || (dstOrSrcFlag == 2))
         {/*check legal method for source operand*/
+            if ((actionID == 9) || (actionID == 10) || (actionID == 13))
+            {
+                if (strstr (actionTable[actionID].legalMethodOprDst, "1") != NULL)
+                {/*verify if label is legal operand*/
+                    *rs = 0;
+                    return LABEL_METHOD;/*valid operand*/
+                }
+            }
             if ((strstr (actionTable[actionID].legalMethodOprSrc, "1") != NULL) || (dstOrSrcFlag == 2))
             {/*verify if label is legal operand*/
-                return *rs = 0;/*valid operand*/
+                *rs = 0;
+                return LABEL_METHOD;/*valid operand*/
             }
             else
             {
-                *rs = -1;
-                return *rs;
+                *rs = 11;
+                return -1;
             }
         }
         else if (dstOrSrcFlag == 1)
         {/*check legal method for destination operand*/
             if ((strstr (actionTable[actionID].legalMethodOprDst, "1") != NULL))
             {/*verify if label is legal operand*/
-                return *rs = 0;/*valid operand*/
+                *rs = 0;
+                return LABEL_METHOD;/*valid operand*/
             }
             else
             {
-                *rs = -1;
-                return *rs;
+                *rs = 14;
+                return -1;
             }
         }
     }
@@ -303,24 +319,26 @@ int verifyOperand(int actionID, char *operandName, int dstOrSrcFlag, label *labe
         {/*check legal method for source operand*/
             if ((strstr (actionTable[actionID].legalMethodOprSrc, "3") != NULL) || (dstOrSrcFlag == 2))
             {/*verify if register is legal operand*/
-                return *rs = 0;/*valid operand*/
+                *rs = 0;
+                return REGISTER_METHOD;/*valid operand*/
             }
             else
             {
-                *rs = -1;
-                return *rs;
+                *rs = 12;
+                return -1;
             }
         }
         else if (dstOrSrcFlag == 1)
         {/*check legal method for destination operand*/
             if ((strstr (actionTable[actionID].legalMethodOprDst, "3") != NULL))
             {/*verify if register is legal operand*/
-                return *rs = 0;/*valid operand*/
+                *rs = 0;
+                return REGISTER_METHOD;/*valid operand*/
             }
             else
             {
-                *rs = -1;
-                return *rs;
+                *rs = 15;
+                return -1;
             }
         }
     }
@@ -330,28 +348,32 @@ int verifyOperand(int actionID, char *operandName, int dstOrSrcFlag, label *labe
         {/*check legal method for source operand*/
             if ((strstr (actionTable[actionID].legalMethodOprSrc, "0") != NULL) || (dstOrSrcFlag == 2))
             {/*verify if immediate is legal operand*/
-                return *rs = 0;/*valid operand*/
+                *rs = 0;
+                return IMMEDIATE_METHOD;/*valid operand*/
             }
             else
             {
-                *rs = -1;
-                return *rs;
+                *rs = 13;
+                return -1;
             }
         }
         else if (dstOrSrcFlag == 1)
         {/*check legal method for destination operand*/
             if ((strstr (actionTable[actionID].legalMethodOprDst, "0") != NULL))
             {/*verify if immediate is legal operand*/
-                return *rs = 0;/*valid operand*/
+                *rs = 0;
+                return IMMEDIATE_METHOD;/*valid operand*/
             }
             else
             {
-                *rs = -1;
-                return *rs;
+                *rs = 16;
+                return -1;
             }
         }
 
     }
+    *rs = 10;
+    return -1;
 }
 
 /* a function that returns the first operand of an action and NULL if there is not a proper action */
@@ -377,7 +399,28 @@ char *getFirstOperand(char *buffer, int *rs)
         return NULL;
     }
     index = nextStr (index);
-    while (index[0] != EOF && index[0] != ' ')                      /* storing the command  and returning the command */
+    if ((strcmp (acn[i].actionName, "jmp") == 0) || (strcmp (acn[i].actionName, "bne") == 0) ||
+            (strcmp (acn[i].actionName, "jsr") == 0))
+    {                                                               /* storing the command  and returning the command */
+        while (index[0] != EOF && index[0] != ' ')                                              /* for type 2 actions */
+        {
+            if (index[0] == '(')
+                break;
+            else
+            {
+                if (index[0] != '#')
+                {
+                    opIndex[0] = index[0];
+                    opIndex++;
+                    index++;
+                }
+                else
+                    index++;
+            }
+        }
+        return operand;
+    }
+    while (index[0] != '\0' && index[0] != ' ')                      /* storing the command  and returning the command */
     {
         if (index[0] == ',')
             break;
@@ -456,34 +499,86 @@ char *getFirstParam(char *buffer)
 char *getSecondParam(char *buffer)
 {
     static char *param;
-    if (getFirstParam (buffer) ==
-            NULL)                                                  /* if there is no first param */
+    if (getFirstParam (buffer) == NULL)                                                 /* if there is no first param */
         return NULL;
     param = getSecondOperand (buffer);
-    param[strlen (param) - 1] = '\0';
+    if (param != NULL)
+        param[strlen (param) - 1] = '\0';
     return param;
 }
 
-int ifCommand(char *buffer, int *rs)
+int ifCommand(char *buffer, label *labelList, int *rs)
 {
     char command[BUFFER_SIZE] = {'\0'};
-    char *index = buffer;
+    char *index = buffer, *firstParam = NULL, *secondParam = NULL;
+    int actionId;
     if (ifLabel (buffer, rs) != NULL)
         index = nextStr (index);
     getString2 (index, command, ' ');
+    actionId = getActionID (command);
     if ((strcmp (command, "jmp") == 0) || (strcmp (command, "jsr") == 0) || (strcmp (command, "bne") == 0))
     {
-        if (matchingBrackets (index) == 1)
-        {
-            *rs = 24;
-            return 0;
-        }
         index = nextStr2 (index);
         index = skipSpcaes (index);
-        while (index[1] != '(')
-            index++;
-        if (index[0] == ' ')
-            return 0;                                                                     /* spaces between arguments */
         index++;
+        firstParam = getFirstParam (index);
+        secondParam = getSecondParam (index);
+        if (firstParam != NULL && secondParam != NULL)
+        {
+            while (index[0] != ')')
+            {
+                if (index[0] == ' ')
+                    return 0;                                                             /* spaces between arguments */
+                index++;
+            }
+            if (secondParam[0] == '\0')
+                return 0;
+            verifyOperand (actionId, firstParam, 2, labelList, rs);
+            if (*rs != 0)
+                return 0;                                                                     /* error on first param */
+            verifyOperand (actionId, secondParam, 2, labelList, rs);
+            if (*rs != 0)
+                return 0;
+        }
+        verifyOperand (actionId, getFirstOperand (buffer, rs), 1, labelList, rs);
+        if (*rs != 0)
+            return 0;                                                                                /* operand error */
+
     }
+    else if ((strcmp (command, "mov") == 0) || (strcmp (command, "cmp") == 0) || (strcmp (command, "add") == 0) ||
+            (strcmp (command, "sub") == 0) || (strcmp (command, "lea") == 0))
+    {
+        firstParam = getFirstOperand (index, rs);
+        secondParam = getSecondOperand (index);
+        if (secondParam == NULL)                                                   /* in case there is only 1 operand */
+            return 0;
+        verifyOperand (actionId, firstParam, 0, labelList, rs);
+        if (*rs != 0)
+            return 0;
+        verifyOperand (actionId, firstParam, 1, labelList, rs);
+        if (*rs != 0)
+            return 0;
+    }
+    else if ((strcmp (command, "not") == 0) || (strcmp (command, "clr") == 0) || (strcmp (command, "inc") == 0) ||
+            (strcmp (command, "dec") == 0) || (strcmp (command, "red") == 0) || (strcmp (command, "prn") == 0))
+    {
+        if (getSecondOperand (index) != NULL)
+            return 0;                                                         /* in case there is more then 1 operand */
+        verifyOperand (actionId, getFirstOperand (buffer, rs), 1, labelList, rs);
+        if (*rs != 0)
+            return 0;
+    }
+    else if ((strcmp (command, "rts") == 0) || (strcmp (command, "stop") == 0))
+    {
+        index = nextStr2 (index);
+        while (index[0] != '\0')
+        {
+            if (index[0] != ' ')
+                return 0;                                             /* in case there is something after the command */
+            index++;
+        }
+    }
+    else
+        return 0;                                                                                     /* failure :-*( */
+    return 1;                                                                                           /* success!!! */
 }

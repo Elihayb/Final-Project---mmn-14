@@ -5,40 +5,51 @@
 #include "utilities.h"
 
 /*need to perform code that update the counters IC and DC*/
-int firstPass(FILE *f, command *commandList, data *dataList, label *labelList, int *rs)
+int firstPass(char *fileName, command *commandList, data *dataList, label *labelList, int *rs)
 {
-    char *labelName;
-    char *directive;
-    char *currentLine = {0};
+    char *labelName = NULL;
+    char *directive = NULL;
+    char *currentLine;
+    char *ch;/*for testing*/
+    FILE *inFile;
+    FILE *fout;/*for testing*/
     unsigned int lineCount = 0;
     int i, labelFlag = 0, strOrNum = 0;
     IC = 0;
     DC = 0;
 
+    inFile = fopen (fileName, "r");
 
-    while (fgets (currentLine, BUFFER_SIZE, f) != NULL)
+    fout = fopen ("tstOutput.txt", "w");/*the function is not working without this. we don't kne why :( */
+
+    if (inFile == NULL)
+    {
+        fprintf (stderr, "\nUnable to open file \"%s\" in read mode\n", fileName);
+    }
+
+    while (fgets (currentLine, BUFFER_SIZE, inFile) != NULL)
     {
         lineCount++;
-
-        if ((strcmp (currentLine, "") == 0) || (ifComment (currentLine) == 1))
+        ch = currentLine;
+        if ((isEmpty (ch) == 1) || (ifComment (currentLine) == 1))
         {/*check if line is empty or comment*/
             continue;
         }
-        if (matchingBrackets (currentLine) == 0)
+        if (matchingBrackets (currentLine) == 1)
         {/*check Brackets if matching*/
             errorPrint (7, lineCount);/*undefined instruction*/
             continue;
         }
         labelName = ifLabel (currentLine, rs);
-        if (labelName != NULL)
-        {/*check if there is label*/
-            if (rs != 0)
-            {
-                errorPrint ((int) rs, lineCount);
-                continue;
-            }
-            labelFlag = 1;
-        }
+                if (labelName != NULL)
+                {/*check if there is label*/
+                    if (rs != 0)
+                    {
+                        errorPrint ((int) rs, lineCount);
+                        continue;
+                    }
+                    labelFlag = 1;
+                }
         if ((directive = ifDirective (currentLine, rs)) != NULL)
         {/*check if string or data directive*/
             if (rs != 0)
@@ -55,7 +66,7 @@ int firstPass(FILE *f, command *commandList, data *dataList, label *labelList, i
                 strOrNum = 1;
             }
             addToLabelTable (labelList, labelName, DC, 0, rs);/*add label name to labels list*/
-            if (rs != 0)
+            if (*rs != 0)
             {
                 errorPrint ((int) rs, lineCount);
                 continue;
@@ -83,7 +94,7 @@ int firstPass(FILE *f, command *commandList, data *dataList, label *labelList, i
             if (strstr (directive, "1"))
             {/*1 is value for external directive*/
                 addToLabelTable (labelList, labelName, DC, 2, rs);
-                if (rs != 0)
+                if (*rs != 0)
                 {
                     errorPrint ((int) rs, lineCount);
                     continue;
@@ -92,7 +103,7 @@ int firstPass(FILE *f, command *commandList, data *dataList, label *labelList, i
             if (strstr (directive, "0"))
             {/*0 is value for entry directive*/
                 addToLabelTable (labelList, labelName, DC, 1, rs);
-                if (rs != 0)
+                if (*rs != 0)
                 {
                     errorPrint ((int) rs, lineCount);
                     continue;
@@ -103,8 +114,8 @@ int firstPass(FILE *f, command *commandList, data *dataList, label *labelList, i
             continue;
         }
     }
-    fseek (f, 0, SEEK_SET);
-    while (fgets (currentLine, BUFFER_SIZE, f) != NULL)
+    fseek (inFile, 0, SEEK_SET);
+    while (fgets (currentLine, BUFFER_SIZE, inFile) != NULL)
     {
         lineCount++;
 
@@ -117,7 +128,8 @@ int firstPass(FILE *f, command *commandList, data *dataList, label *labelList, i
             errorPrint (7, lineCount);/*undefined instruction*/
             continue;
         }
-        if ((ifDirective (currentLine, rs) != NULL) || (ifGlobalDirective (currentLine, rs) != NULL)){
+        if ((ifDirective (currentLine, rs) != NULL) || (ifGlobalDirective (currentLine, rs) != NULL))
+        {
             continue;
         }
         labelName = ifLabel (currentLine, rs);
@@ -132,20 +144,22 @@ int firstPass(FILE *f, command *commandList, data *dataList, label *labelList, i
         if (labelFlag == 1)
         {
             addToLabelTable (labelList, labelName, IC, 0, rs);
-            if (rs != 0)
+            if (*rs != 0)
             {
                 errorPrint ((int) rs, lineCount);
                 continue;
             }
         }
         addToCommandTable (commandList, labelList, IC, currentLine, rs);
-        if (rs != 0)
+        if (*rs != 0)
         {
             errorPrint ((int) rs, lineCount);
             continue;
         }
         IC = IC + commandList->wordAmount;
     }
+    fclose (inFile);
+    fclose (fout);
     if (&rs != 0)
     {
         return -1;

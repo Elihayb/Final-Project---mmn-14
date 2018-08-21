@@ -1,5 +1,5 @@
 #include <string.h>
-
+#include <ctype.h>
 
 int matchingBrackets(char *buffer)
 {
@@ -28,7 +28,7 @@ char *nextStr(char *strIndex)
 
 char *nextStr2(char *strIndex)
 {
-    while (strIndex[0] != ' ')
+    while (strIndex[0] != ' ' && strIndex[0] != '\0')
         strIndex++;
     return strIndex;
 }
@@ -58,11 +58,12 @@ void getString(char *buffer, char *string, int startIndex)
 
 void getString2(char *index, char *string, char end)
 {
-    while(index[0] != end)
+    char *tmp = index;
+    while (tmp[0] != end && tmp[0] != '\0')
     {
-        string[0] = index[0];
+        string[0] = tmp[0];
         string++;
-        index++;
+        tmp++;
     }
 }
 
@@ -78,4 +79,14 @@ int char_index(char *buffer, char chr) /* a function that returns the index of a
         }
     }
     return index;
+}
+
+/*function check if buffer contain only spaces or tabs. return 0 if buffer contain another chars and 1 if empty*/
+int isEmpty(const char *s) {
+    while (*s != '\0') {
+        if (!isspace((unsigned char)*s))
+            return 0;
+        s++;
+    }
+    return 1;
 }

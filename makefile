@@ -1,8 +1,9 @@
 # specify filenames in the following lists
 
 EXEC_FILE = assembler
-C_FILES = assembler.c cmdData.c firstPass.c labelsData.c outData.c outputCreation.c parsing.c secondPass.c wordData.c  
-H_FILES = cmd_data.h first_pass.h labels_data.h out_data.h output_creation.h parsing.h second_pass.h word_data.h   
+C_FILES = main.c assembler.c Data.c firstPass.c outputCreation.c parsing.c utilities.c
+H_FILES = Data.h first_pass.h output_creation.h  parsing.h  utilities.h
+
 
 # ==> to flush stdout after each line, insert in main() the statement: FLUSH_STDOUT; 
 # ==> to flush stderr after each line, insert in main() the statement: FLUSH_STDERR;

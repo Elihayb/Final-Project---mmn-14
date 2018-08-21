@@ -25,6 +25,6 @@ char *getFirstParam(char *buffer);
 
 char *getSecondParam(char *buffer);
 
-int ifCommand(char *buffer, int *rs);
+int ifCommand(char *buffer, label *labelList, int *rs);
 
 #endif /* PARSING_H */

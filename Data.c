@@ -1,4 +1,4 @@
-
+/*data file should be contain all data management and words */
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -98,19 +98,18 @@ action *defineActionTable()
  pointer to new label on the list.
  report success flag 0 if success, else -1.
  */
-/*To Do: need to add return errors status with rs flag*/
-label addToLabelTable(label *label, char *name, unsigned int DC, unsigned int type, int *rs)
+label *addToLabelTable(label *label, char *name, unsigned int DC, unsigned int type, int *rs)
 {
 
     if ((name == NULL) || (*name == 0))
     {/*check if name is NULL or without value*/
         if (rs)
             *rs = -1;/*failure*/
-        return *label;
+        return label;
     }
     if (validLabel (label, name, rs) != 0)
     {
-        return *label;/*invalid label name*/
+        return label;/*invalid label name*/
     }
     if (label == NULL)
     {/*list is empty and label are not exist */
@@ -125,22 +124,22 @@ label addToLabelTable(label *label, char *name, unsigned int DC, unsigned int ty
             if (rs)
                 *rs = 0;/*success*/
 
-            return *label;
+            return label;
         }
         else
         {
             free (label);/*free memory and return NULL and failure if newLabel fail*/
             if (rs)
                 *rs = -1;/*failure*/
-            return *label;/*return received pointer with NULL address */
+            return label;/*return received pointer with NULL address */
         }
     }
     else
     {
-        *label->next = addToLabelTable (label->next, name, DC, type, rs);
+        label->next = addToLabelTable (label->next, name, DC, type, rs);
         if (*rs)
             *rs = 0;/*success*/
-        return *label;
+        return label;
     }
 }
 
@@ -152,8 +151,6 @@ label addToLabelTable(label *label, char *name, unsigned int DC, unsigned int ty
  Return:
  -1 if label is not valid.
  0 if label is valid.*/
-
-
 int validLabel(label *list, char *labelName, int *rs)
 {
     int i;
@@ -188,7 +185,8 @@ int validLabel(label *list, char *labelName, int *rs)
         return *rs;/*label is not valid*/
 
     }
-    return *rs = 0;/*label is valid*/
+    *rs = 0;
+    return *rs;/*label is valid*/
 
 
 }
@@ -237,7 +235,10 @@ label *searchLabel(label *list, char *str)
     {
 
         /*search loop*/
-
+        if (lbl->labelName == NULL)
+        {
+            return NULL;
+        }
         if (strcmp (lbl->labelName, str) == 0)
         {
             return lbl;
@@ -254,9 +255,9 @@ label *searchLabel(label *list, char *str)
 
 /*********************DATA TABLE SECTION**********************/
 
-/* allocate and initialize a new label;
-   space for the label is obtained via malloc();
-   return a pointer to the new label, NULL if no space available*/
+/* allocate and initialize a new data;
+   space for the data is obtained via malloc();
+   return a pointer to the new data, NULL if no space available*/
 data *newData()
 {
     data *dt;
@@ -276,6 +277,18 @@ data *newData()
     return NULL;
 }
 
+
+/*add data to data list if it contain valid values
+ Parameters:
+ pointer to data list (MULL if there is not list).
+ name.
+ DC value for data address.
+ type of data (0 for string, 1 for numbers).
+ report success flag.
+ Return:
+ pointer to new label on the list.
+ report success flag 0 if success, else -1.
+ */
 data addToDataTable(data *dataTable, char *dataLabel, char *sourceCode, int address, int strOrNun, int *rs)
 {
     data *dt;
@@ -285,7 +298,7 @@ data addToDataTable(data *dataTable, char *dataLabel, char *sourceCode, int addr
     {/*check if data from type string*/
         if (verifyStringCommand (sourceCode, rs) == NULL)
         {
-            *rs =-1;
+            *rs = -1;
             return *dataTable;
         }
         arraySize = strlen (verifyStringCommand (sourceCode, rs));
@@ -294,7 +307,7 @@ data addToDataTable(data *dataTable, char *dataLabel, char *sourceCode, int addr
     {/*check if data from type numbers*/
         if (verifyDataCommand (sourceCode, rs) == NULL)
         {
-            *rs =-1;
+            *rs = -1;
             return *dataTable;
         }
         arraySize = verifyDataCommand (sourceCode, rs)[0];
@@ -314,7 +327,7 @@ data addToDataTable(data *dataTable, char *dataLabel, char *sourceCode, int addr
             dt->next = NULL;
             return *dataTable;
         }
-        *rs =-1;
+        *rs = -1;
         free (dt);
         return *dataTable;
     }
@@ -331,7 +344,7 @@ data addToDataTable(data *dataTable, char *dataLabel, char *sourceCode, int addr
 
 
 /*********************COMMAND SECTION**********************/
-
+/*this function add command and all operands and parameters to commands table */
 command addToCommandTable(command *list, label *labelList, unsigned int address, char *sourceCode, int *rs)
 {
 
@@ -346,7 +359,7 @@ command addToCommandTable(command *list, label *labelList, unsigned int address,
         *rs = 7;/*status 2 return error about un-exist action name*/
         return *list;
     }
-    if (ifCommand (sourceCode, rs) != 1)
+    if (ifCommand (sourceCode, labelList, rs) != 1)
     {
         return *list;/*rs return the error code from function*/
     }
@@ -356,9 +369,9 @@ command addToCommandTable(command *list, label *labelList, unsigned int address,
         if (list != NULL)
         {
             list->decimalAddress = address;
-            list->srcCode= sourceCode;
+            list->srcCode = sourceCode;
             list->wordAmount = amountOfWord (sourceCode, labelList);
-            list->machineCode = buildWord (sourceCode,labelList,rs);
+            list->machineCode = buildWord (sourceCode, labelList, rs);
             if (rs)
                 *rs = 0;/*success*/
             return *list;
@@ -409,7 +422,7 @@ int amountOfWord(char *sourceCode, label *labelList)
 
     actionCode = getActionID (sourceCode);
 
-    if (ifCommand (sourceCode, rs) != 1)
+    if (ifCommand (sourceCode, labelList, rs) != 1)
     {/*check if invalid command*/
         return -1;/*failure*/
     }
@@ -484,7 +497,7 @@ int *setARE(char *sourceCode, label *labelList)
     char *operandName;
     label *lbl;
 
-    if (ifCommand (sourceCode, rs) != 1)
+    if (ifCommand (sourceCode, labelList, rs) != 1)
     {
         return NULL;
     }
@@ -707,7 +720,7 @@ char *buildChildWord(char *buffer, label *labelList, int numOfChildWord, int *rs
     return returnStr;
 }
 
-
+/*function to build word that contain rgister number if there is one register or union word for 2 registers*/
 char *registerWord(char *buffer, label *labelList, int numOfChildWord, int *rs)
 {
     int actionID = getActionID (buffer);
@@ -977,59 +990,82 @@ char *buildDataWord(char *buffer, int *rs)
 /*this function save on homogeneous in error contact.
  * get row number and error id
  * and print the error with line number*/
-int errorPrint( int errId, unsigned int row)
+int errorPrint(int errId, unsigned int row)
 {
     switch (errId)
     {
         /*labels errors*/
         case 1:
             fprintf (stderr, "Line: %d , invalid label - declared few times or not declared at all", row);
+            break;
         case 2:
             fprintf (stderr, "Line: %d , invalid label name - saved word", row);
+            break;
         case 3:
             fprintf (stderr, "Line: %d , warning - label does not start in first column", row);
+            break;
         case 4:
             fprintf (stderr, "Line: %d , local label cannot be declared as external", row);
+            break;
         case 5:
             fprintf (stderr, "Line: %d , label is already designated as external", row);
+            break;
         case 6:
             fprintf (stderr, "Line: %d , invalid label name - name large", row);
+            break;
             /*command errors*/
         case 7:
             fprintf (stderr, "Line: %d , undefined instruction", row);
+            break;
         case 8:
             fprintf (stderr, "Line: %d , number of arguments is not valid", row);
+            break;
         case 9:
             fprintf (stderr, "Line: %d , need to set only 2 parameters ", row);
+            break;
         case 10:
-            fprintf (stderr, "Line: %d , need more parameters", row);
+            fprintf (stderr, "Line: %d , invalid operand", row);
+            break;
         case 11:
             fprintf (stderr, "Line: %d , invalid source operand (label)", row);
+            break;
         case 12:
             fprintf (stderr, "Line: %d , invalid source operand (register)", row);
+            break;
         case 13:
             fprintf (stderr, "Line: %d , invalid source operand (immediate)", row);
+            break;
         case 14:
             fprintf (stderr, "Line: %d , invalid target operand (label)", row);
+            break;
         case 15:
             fprintf (stderr, "Line: %d , invalid target operand (register)", row);
+            break;
         case 16:
             fprintf (stderr, "Line: %d , invalid target operand (immediate)", row);
+            break;
         case 17:
             fprintf (stderr, "Line: %d , invalid argument (immediate too large)", row);
+            break;
             /*directive errors*/
         case 18:
             fprintf (stderr, "Line: %d , data array contain illegal values", row);
+            break;
         case 19:
             fprintf (stderr, "Line: %d , incorrect string array", row);
+            break;
         case 20:
             fprintf (stderr, "Line: %d , data overflow (positive value too large to fit in 14 bits)", row);
+            break;
         case 21:
             fprintf (stderr, "Line: %d , data overflow (negative value too large to fit in 14 bits)", row);
+            break;
         case 22:
             fprintf (stderr, "Line: %d , missing argument in directive", row);
+            break;
         case 23:
             fprintf (stderr, "Line: %d , undefined directive", row);
+            break;
         default:
             return -1;/*failure*/
     }
