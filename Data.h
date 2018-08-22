@@ -9,10 +9,11 @@
 #define BUFFER_SIZE 81
 #define WORD_LENGTH 14
 #define MAX_WORDS_PER_COMMAND 4
-#define MAX_DIRECT_NAME 7
 #define NUM_OF_ADDRESSING_METHOD 4
 #define HIGHEST_POSITIVE_VALUE 8191
 #define HIGHEST_NEGATIVE_VALUE -8192
+#define REGISTERS_ARRAY_SIZE 8
+#define MEMORY_SIZE 256
 #define IMMEDIATE_METHOD 0
 #define LABEL_METHOD 1
 #define JUMP_METHOD 2
@@ -34,6 +35,19 @@ typedef struct action
     char legalMethodOprSrc[NUM_OF_ADDRESSING_METHOD];/*Legal method for operand source*/
     char legalMethodOprDst[NUM_OF_ADDRESSING_METHOD];/*Legal method for operand destination*/
 } action;
+
+/*register contain code and data array*/
+typedef struct registers
+{
+    int registerCode;
+    char *dataArray[15];
+
+}registers;
+
+/*memory unit contain data array with 14 cells*/
+typedef struct memory{
+    char **dataArray[15];
+}memory;
 
 /*label contain name, address from current location of DC, type and pointers for linked list*/
 typedef struct label

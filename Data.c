@@ -1,4 +1,4 @@
-/*data file should be contain all data management and words */
+/*data file contain all data management and words */
 
 #include <stdio.h>
 #include <stdlib.h>
