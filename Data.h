@@ -59,6 +59,8 @@ typedef struct label
     struct label *next;
 } label;
 
+/*data contain type (string or numbers),label name, source code buffer, code after convert to binary,
+ * size of array, address and next data struct*/
 typedef struct data
 {
     int type;
@@ -144,6 +146,9 @@ data *newData();
  report success flag 0 if success, else -1.
  */
 data addToDataTable(data *dataTable, char *dataLabel, char *sourceCode, int address, int strOrNun, int *rs);
+
+/*search data by address */
+data *searchData(data *dataList,int address);
 
 /*this function add command and all operands and parameters to commands table */
 command addToCommandTable(command *list, label *labelList, unsigned int address, char *sourceCode, int *rs);

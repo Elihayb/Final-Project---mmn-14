@@ -20,4 +20,7 @@ int char_index(char *buffer, char chr);
 /*function check if buffer contain only spaces or tabs. return 0 for true and false if buffer contain another chars*/
 int isEmpty(const char *s);
 
+/*the function convert the binary array to decimal digit*/
+int convertToChar(char *buffer,int length);
+
 #endif

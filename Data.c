@@ -342,7 +342,17 @@ data addToDataTable(data *dataTable, char *dataLabel, char *sourceCode, int addr
     }
 }
 
-
+/*search data by address */
+data *searchData(data *dataList,int address){
+    data *dt = dataList;
+    while(dt !=NULL){
+        if (address == dt->address){
+            return dt;
+        }
+        dt = dt->next;
+    }
+    return NULL;
+}
 /*********************COMMAND SECTION**********************/
 /*this function add command and all operands and parameters to commands table */
 command addToCommandTable(command *list, label *labelList, unsigned int address, char *sourceCode, int *rs)

@@ -90,3 +90,23 @@ int isEmpty(const char *s) {
     }
     return 1;
 }
+
+/*the function convert the binary array to decimal digit*/
+int convertToChar(char *buffer,int length)
+{
+    int multiplier = 0;
+    int i;
+    int num;
+    char *zero = "0";
+    int sum = 0;
+    for(i = length - 1; i>=0; i--)
+    {
+        if (strstr ((char *) buffer[i], zero))
+        {
+            sum += (0 * (1 << multiplier++));
+        }
+        else
+            sum += (1 * (1 << multiplier++));
+    }
+    return sum;
+}

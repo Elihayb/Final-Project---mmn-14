@@ -10,7 +10,7 @@
 
 int mov (char *firstOperand,char *secondOperand,label *labelList,registers *registers,data *dataList);
 
-int cmp (char *firstOperand,char *secondOperand,label *labelList,registers *registers,data *dataList);
+int cmp (char *firstOperand,char *secondOperand,label *labelList,registers *registers,data *dataList,registers *PSW);
 
 int add (char *firstOperand,char *secondOperand,label *labelList,registers *registers,data *dataList);
 
