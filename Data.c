@@ -1009,72 +1009,72 @@ int errorPrint(int errId, unsigned int row)
             fprintf (stderr, "Line: %d , invalid label - declared few times or not declared at all", row);
             break;
         case 2:
-            fprintf (stderr, "Line: %d , invalid label name - saved word", row);
+            fprintf (stderr, "Line: %d , invalid label name\n", row);
             break;
         case 3:
-            fprintf (stderr, "Line: %d , warning - label does not start in first column", row);
+            fprintf (stderr, "Line: %d , warning - label does not start in first column\n", row);
             break;
         case 4:
-            fprintf (stderr, "Line: %d , local label cannot be declared as external", row);
+            fprintf (stderr, "Line: %d , local label cannot be declared as external\n", row);
             break;
         case 5:
-            fprintf (stderr, "Line: %d , label is already designated as external", row);
+            fprintf (stderr, "Line: %d , label is already designated as external\n", row);
             break;
         case 6:
-            fprintf (stderr, "Line: %d , invalid label name - name large", row);
+            fprintf (stderr, "Line: %d , invalid label name - name large\n", row);
             break;
             /*command errors*/
         case 7:
-            fprintf (stderr, "Line: %d , undefined instruction", row);
+            fprintf (stderr, "Line: %d , undefined instruction\n", row);
             break;
         case 8:
-            fprintf (stderr, "Line: %d , number of arguments is not valid", row);
+            fprintf (stderr, "Line: %d , number of arguments is not valid\n", row);
             break;
         case 9:
-            fprintf (stderr, "Line: %d , need to set only 2 parameters ", row);
+            fprintf (stderr, "Line: %d , need to set only 2 parameters \n", row);
             break;
         case 10:
-            fprintf (stderr, "Line: %d , invalid operand", row);
+            fprintf (stderr, "Line: %d , invalid operand\n", row);
             break;
         case 11:
-            fprintf (stderr, "Line: %d , invalid source operand (label)", row);
+            fprintf (stderr, "Line: %d , invalid source operand (label)\n", row);
             break;
         case 12:
-            fprintf (stderr, "Line: %d , invalid source operand (register)", row);
+            fprintf (stderr, "Line: %d , invalid source operand (register)\n", row);
             break;
         case 13:
-            fprintf (stderr, "Line: %d , invalid source operand (immediate)", row);
+            fprintf (stderr, "Line: %d , invalid source operand (immediate)\n", row);
             break;
         case 14:
-            fprintf (stderr, "Line: %d , invalid target operand (label)", row);
+            fprintf (stderr, "Line: %d , invalid target operand (label)\n", row);
             break;
         case 15:
-            fprintf (stderr, "Line: %d , invalid target operand (register)", row);
+            fprintf (stderr, "Line: %d , invalid target operand (register)\n", row);
             break;
         case 16:
-            fprintf (stderr, "Line: %d , invalid target operand (immediate)", row);
+            fprintf (stderr, "Line: %d , invalid target operand (immediate)\n", row);
             break;
         case 17:
-            fprintf (stderr, "Line: %d , invalid argument (immediate too large)", row);
+            fprintf (stderr, "Line: %d , invalid argument (immediate too large)\n", row);
             break;
             /*directive errors*/
         case 18:
-            fprintf (stderr, "Line: %d , data array contain illegal values", row);
+            fprintf (stderr, "Line: %d , data array contain illegal values\n", row);
             break;
         case 19:
-            fprintf (stderr, "Line: %d , incorrect string array", row);
+            fprintf (stderr, "Line: %d , incorrect string array\n", row);
             break;
         case 20:
-            fprintf (stderr, "Line: %d , data overflow (positive value too large to fit in 14 bits)", row);
+            fprintf (stderr, "Line: %d , data overflow (positive value too large to fit in 14 bits)\n", row);
             break;
         case 21:
-            fprintf (stderr, "Line: %d , data overflow (negative value too large to fit in 14 bits)", row);
+            fprintf (stderr, "Line: %d , data overflow (negative value too large to fit in 14 bits)\n", row);
             break;
         case 22:
-            fprintf (stderr, "Line: %d , missing argument in directive", row);
+            fprintf (stderr, "Line: %d , missing argument in directive\n", row);
             break;
         case 23:
-            fprintf (stderr, "Line: %d , undefined directive", row);
+            fprintf (stderr, "Line: %d , undefined directive\n", row);
             break;
         default:
             return -1;/*failure*/

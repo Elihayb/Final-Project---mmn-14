@@ -11,55 +11,81 @@
 /* a function that returns 1 if the line in the buffer is a comment */
 int ifComment(char *buffer)
 {
-    return (buffer[0] == ';') ? 1 : 0;
+    if (buffer != NULL)
+        return (buffer[0] == ';') ? 1 : 0;
 }
 
 /* a function that checks if there is a label and if so the function returns the label and NULL otherwise */
-char *ifLabel(char *buffer, int *RS)                                            /* RS variable stands for error code. */
+char *ifThereIsLabel(char *buffer, int *RS)                                            /* RS variable stands for error code. */
 {
-    int i, res = 0, spaceIndex = 0;                               /* res variable 1 if there is label and 0 otherwise */
-    static char label[LABEL_SIZE] = {'\0'};
-    label[0] = '\0';
-    if (buffer[0] == ' ' || !(isalpha (buffer[0])))                                       /* testing the first column */
+    if (strchr (buffer, ':') != NULL)
     {
-        *RS = 3;
-        return NULL;
-    }
-    for (i = 0 ; i < strlen (buffer) ; i++)                 /* looking for the ':' character and the space character  */
-    {
-        if (buffer[i] == ' ')
-            spaceIndex = i;
-        if (buffer[i] == ':')
-            break;
-    }                                                                         /* i stands for the ':' character index */
-    if (spaceIndex > i || spaceIndex == 0)
-        res = 1;
-    if (i > 31)
-    {
-        *RS = 6;
-        return NULL;
-    }
-    if (res == 1)
-    {
-        int j = 0;
-        while (buffer[j] != ':')
+        int i, res = 0, spaceIndex = 0;                               /* res variable 1 if there is label and 0 otherwise */
+        static char label[LABEL_SIZE] = {'\0'};
+        label[0] = '\0';
+        if (buffer[0] == ' ' || !(isalpha (buffer[0])))                                       /* testing the first column */
         {
-            if ((isalpha (buffer[j])) ||
-                    (isdigit (buffer[j])))            /* making sure the label consist of characters and numbers only */
-                label[j] = buffer[j];
-            else
-            {
-                *RS = 2;
-                return NULL;
-            }
-            j++;
+            *RS = 3;
+            return NULL;
         }
-        return label;                                   /* the function returns the label (without the ':' character) */
+        for (i = 0 ; i < strlen (buffer) ; i++)                 /* looking for the ':' character and the space character  */
+        {
+            if (buffer[i] == ' ')
+                spaceIndex = i;
+            if (buffer[i] == ':')
+                break;
+        }                                                                         /* i stands for the ':' character index */
+        if (spaceIndex > i || spaceIndex == 0)
+            res = 1;
+        if (i > 31)
+        {
+            *RS = 6;
+            return NULL;
+        }
+        if (res == 1)
+        {
+            int j = 0;
+            while (buffer[j] != ':')
+            {
+                if ((isalpha (buffer[j])) || (isdigit (buffer[j])))
+                {          /* making sure the label consist of characters and numbers only */
+                    label[j] = buffer[j];
+                }
+                else if (buffer[j] == '\n')
+                {
+                    break;
+                }
+                else
+                {
+                    *RS = 2;
+                    return NULL;
+                }
+                j++;
+            }
+            return label;                                   /* the function returns the label (without the ':' character) */
+        }
+        else
+        {
+            return NULL;
+        }
     }
     else
-    {
         return NULL;
+}
+
+/* this function chacks if a label is legal. the function returns 0 if not legal and 1 otherwise. */
+int ifLabel(char *string)
+{
+    char *index = string;
+    while (index[0] != '\0')
+    {
+        if (index[0] == '\0')
+            break;
+        if (!(isalpha (index[0])) && !(isdigit (index[0])))                         /* making sure the label consist of characters and numbers only */
+            return 0;
+        index++;
     }
+    return 1;
 }
 
 /* a function that checks if there is directive and if so it returns the type and NULL otherwise */
@@ -67,8 +93,9 @@ char *ifDirective(char *buffer, int *RS)
 {
     int label_index, i, dot_index;                                              /* RS variable stands for error code. */
     static char directive[20] = {'\0'};
+    char *index = buffer;
     directive[0] = '\0';
-    if (ifLabel (buffer, RS) != NULL)                                                     /* in case there is a label */
+    if (ifThereIsLabel (buffer, RS) != NULL)                                                     /* in case there is a label */
     {
         label_index = char_index (buffer, ':') + 1;
         dot_index = char_index (buffer, '.');
@@ -91,18 +118,18 @@ char *ifDirective(char *buffer, int *RS)
     }
     else                                                                                      /* if there is no label */
     {
-        if (buffer[0] != '.')                   /* if there is no label then the line should start with '.' character */
+        index = skipSpcaes (index);
+        if (index[0] != '.')                   /* if there is no label then the line should start with '.' character */
         {
             *RS = 23;
             return NULL;
         }
         else
-            getString (buffer, directive, 1);                                                /* storing the directive */
+            getString (index, directive, 1);                                                /* storing the directive */
         if ((strcmp (directive, "data") == 0) || (strcmp (directive, "string") == 0))
             return directive;                                   /* testing the type of the directive and returning it */
         else
         {
-            *RS = 23;
             return NULL;
         }
     }
@@ -117,9 +144,10 @@ char *ifGlobalDirective(char *buffer, int *RS)
     char global_directive[20] = {'\0'}, type = '*';                                  /* string to store the directive */
     static char label[LABEL_SIZE] = {'\0'};                                              /* string to store the label */
     char *index = buffer;                                                                    /* pointer to the buffer */
-    if (ifLabel (buffer, RS) == NULL)                               /* in case there is no label before the directive */
+    if (ifThereIsLabel (buffer, RS) == NULL)                               /* in case there is no label before the directive */
     {
 start:
+        index = skipSpcaes (index);
         if (index[0] != '.')
         {
             return NULL;
@@ -143,14 +171,13 @@ start:
         while (index[0] == ' ')                                    /* advancing the index pointer to the label string */
             index++;
         strcpy (label, index);                                                                   /* storing the label */
-        label[strlen (label)] = ':';                    /* adding the : char so the label can be checked with ifLabel */
-        if (ifLabel (label, RS) == NULL)                                   /* if the label isn't legal returning NULL */
+        if ((ifLabel (label) != 1))                                   /* if the label isn't legal returning NULL */
         {
             *RS = 2;
             return NULL;
         }
         else
-            label[strlen (label) - 1] = type;                         /* replacing the : char with the directive type */
+            label[strlen (label)] = type;                         /* replacing the : char with the directive type */
         return label;                                            /* returning the label along with the directive type */
     }
     else                                                             /* in case there is a label before the directive */
@@ -265,7 +292,7 @@ int verifyOperand(int actionID, char *operandName, int dstOrSrcFlag, label *labe
 {
 
     label *lbl;
-    int i;
+    int i, operand;
     action *actionTable = defineActionTable ();
     lbl = searchLabel (labelTable, operandName);
     if (operandName == NULL)
@@ -312,8 +339,8 @@ int verifyOperand(int actionID, char *operandName, int dstOrSrcFlag, label *labe
     }
     /*check if operand name equal to any register name*/
     if ((strcmp (operandName, "r0") == 0) || (strcmp (operandName, "r1") == 0) || (strcmp (operandName, "r2") == 0) ||
-            (strcmp (operandName, "r3") == 0) || (strcmp (operandName, "r4") == 0) ||
-            (strcmp (operandName, "r5") == 0) || (strcmp (operandName, "r6") == 0) || (strcmp (operandName, "r7") == 0))
+            (strcmp (operandName, "r3") == 0) || (strcmp (operandName, "r4") == 0) || (strcmp (operandName, "r5") == 0) ||
+            (strcmp (operandName, "r6") == 0) || (strcmp (operandName, "r7") == 0))
     {
         if (dstOrSrcFlag == 0 || (dstOrSrcFlag == 2))
         {/*check legal method for source operand*/
@@ -342,7 +369,7 @@ int verifyOperand(int actionID, char *operandName, int dstOrSrcFlag, label *labe
             }
         }
     }
-    if (isdigit ((unsigned char) *operandName) != 0)
+    if (atoi (operandName) != 0)
     {/*check if immediate is legal operand*/
         if ((dstOrSrcFlag == 0) || (dstOrSrcFlag == 2))
         {/*check legal method for source operand*/
@@ -399,8 +426,7 @@ char *getFirstOperand(char *buffer, int *rs)
         return NULL;
     }
     index = nextStr (index);
-    if ((strcmp (acn[i].actionName, "jmp") == 0) || (strcmp (acn[i].actionName, "bne") == 0) ||
-            (strcmp (acn[i].actionName, "jsr") == 0))
+    if ((strcmp (acn[i].actionName, "jmp") == 0) || (strcmp (acn[i].actionName, "bne") == 0) || (strcmp (acn[i].actionName, "jsr") == 0))
     {                                                               /* storing the command  and returning the command */
         while (index[0] != EOF && index[0] != ' ')                                              /* for type 2 actions */
         {
@@ -512,15 +538,15 @@ int ifCommand(char *buffer, label *labelList, int *rs)
     char command[BUFFER_SIZE] = {'\0'};
     char *index = buffer, *firstParam = NULL, *secondParam = NULL;
     int actionId;
-    if (ifLabel (buffer, rs) != NULL)
+    if (ifThereIsLabel (buffer, rs) != NULL)
         index = nextStr (index);
+    index = skipSpcaes (index);
     getString2 (index, command, ' ');
     actionId = getActionID (command);
     if ((strcmp (command, "jmp") == 0) || (strcmp (command, "jsr") == 0) || (strcmp (command, "bne") == 0))
     {
         index = nextStr2 (index);
         index = skipSpcaes (index);
-        index++;
         firstParam = getFirstParam (index);
         secondParam = getSecondParam (index);
         if (firstParam != NULL && secondParam != NULL)
@@ -545,8 +571,8 @@ int ifCommand(char *buffer, label *labelList, int *rs)
             return 0;                                                                                /* operand error */
 
     }
-    else if ((strcmp (command, "mov") == 0) || (strcmp (command, "cmp") == 0) || (strcmp (command, "add") == 0) ||
-            (strcmp (command, "sub") == 0) || (strcmp (command, "lea") == 0))
+    else if ((strcmp (command, "mov") == 0) || (strcmp (command, "cmp") == 0) || (strcmp (command, "add") == 0) || (strcmp (command, "sub") == 0) ||
+            (strcmp (command, "lea") == 0))
     {
         firstParam = getFirstOperand (index, rs);
         secondParam = getSecondOperand (index);
@@ -559,8 +585,8 @@ int ifCommand(char *buffer, label *labelList, int *rs)
         if (*rs != 0)
             return 0;
     }
-    else if ((strcmp (command, "not") == 0) || (strcmp (command, "clr") == 0) || (strcmp (command, "inc") == 0) ||
-            (strcmp (command, "dec") == 0) || (strcmp (command, "red") == 0) || (strcmp (command, "prn") == 0))
+    else if ((strcmp (command, "not") == 0) || (strcmp (command, "clr") == 0) || (strcmp (command, "inc") == 0) || (strcmp (command, "dec") == 0) ||
+            (strcmp (command, "red") == 0) || (strcmp (command, "prn") == 0))
     {
         if (getSecondOperand (index) != NULL)
             return 0;                                                         /* in case there is more then 1 operand */

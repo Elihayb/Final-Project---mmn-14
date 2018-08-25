@@ -5,7 +5,9 @@
 
 int ifComment(char *buffer);
 
-char *ifLabel(char *buffer, int *RS);
+char *ifThereIsLabel(char *buffer, int *RS);
+
+int ifLabel(char *string);
 
 char *ifDirective(char *buffer, int *RS);
 

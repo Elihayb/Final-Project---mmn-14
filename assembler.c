@@ -6,18 +6,13 @@
 #include <stdio.h>
 #include <string.h>
 
-
-
 int main(int argc, char *argv[])
 {
-
-
+    static int rs[1] = {0};
     label *labelList = NULL;
     command *commandList = NULL;
     data *dataList = NULL;
-    int rs[1] = {0};
-
-
+	
     if (argc == 1)
     {
         fprintf (stderr, "\n%s: you need to specify at least one input file\n", *argv);

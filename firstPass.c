@@ -9,14 +9,18 @@ int firstPass(char *fileName, command *commandList, data *dataList, label *label
 {
     char *labelName = NULL;
     char *directive = NULL;
+    /*following variables must to be without initialization -
+     * file reading fail if doing initialization for NULL*/
     char *currentLine;
-    char *ch;/*for testing*/
-    FILE *inFile;
-    FILE *fout;/*for testing*/
+    char *ch = NULL;/*for testing*/
+    FILE *inFile = NULL;
+    FILE *fout = NULL;/*for testing*/
     unsigned int lineCount = 0;
     int i, labelFlag = 0, strOrNum = 0;
+    rs[0] = 0;
     IC = 0;
     DC = 0;
+
 
     inFile = fopen (fileName, "r");
 
@@ -26,12 +30,10 @@ int firstPass(char *fileName, command *commandList, data *dataList, label *label
     {
         fprintf (stderr, "\nUnable to open file \"%s\" in read mode\n", fileName);
     }
-
-    while (fgets (currentLine, BUFFER_SIZE, inFile) != NULL)
+    while ((fgets (currentLine, BUFFER_SIZE, inFile)) != NULL)
     {
         lineCount++;
-        ch = currentLine;
-        if ((isEmpty (ch) == 1) || (ifComment (currentLine) == 1))
+        if ((isEmpty (currentLine) == 1) || (ifComment (currentLine) == 1))
         {/*check if line is empty or comment*/
             continue;
         }
@@ -40,23 +42,23 @@ int firstPass(char *fileName, command *commandList, data *dataList, label *label
             errorPrint (7, lineCount);/*undefined instruction*/
             continue;
         }
-        labelName = ifLabel (currentLine, rs);
-                if (labelName != NULL)
-                {/*check if there is label*/
-                    if (rs != 0)
-                    {
-                        errorPrint ((int) rs, lineCount);
-                        continue;
-                    }
-                    labelFlag = 1;
-                }
-        if ((directive = ifDirective (currentLine, rs)) != NULL)
-        {/*check if string or data directive*/
+        labelName = ifThereIsLabel (currentLine, rs);
+        if (labelName != NULL)
+        {/*check if there is label*/
             if (rs != 0)
             {
                 errorPrint ((int) rs, lineCount);
-                continue;
+                //continue;
             }
+            labelFlag = 1;
+        }
+        if ((directive = ifDirective (currentLine, rs)) != NULL)
+        {/*check if string or data directive*/
+            /*if (rs != 0)
+            {
+                errorPrint ((int) rs, lineCount);
+
+			}*/
             if (strstr (directive, "string") == 0)
             {/*check if string directive*/
                 strOrNum = 0;
@@ -69,13 +71,13 @@ int firstPass(char *fileName, command *commandList, data *dataList, label *label
             if (*rs != 0)
             {
                 errorPrint ((int) rs, lineCount);
-                continue;
+                //continue;
             }
             addToDataTable (dataList, labelName, currentLine, DC, strOrNum, rs);/*add all data or str array to table*/
             if (rs != 0)
             {
                 errorPrint ((int) rs, lineCount);
-                continue;
+                //continue;
             }
             DC = DC + dataList->sizeOfArray;
         }
@@ -84,12 +86,12 @@ int firstPass(char *fileName, command *commandList, data *dataList, label *label
             if (rs != 0)
             {
                 errorPrint ((int) rs, lineCount);
-                continue;
-            }
+                //continue;
+            }/*to do: need to check if we need allocate variable for label name to get diretive value */
             labelName = (char *) malloc (strlen (directive - 1));
-            for (i = 1 ; i < strlen (directive) ; i++)
+            for (i = 0 ; i < strlen (directive) ; i++)
             {/*copy the label name to argument*/
-                labelName[i - 1] = directive[i];
+                labelName[i] = directive[i];
             }
             if (strstr (directive, "1"))
             {/*1 is value for external directive*/
@@ -97,7 +99,7 @@ int firstPass(char *fileName, command *commandList, data *dataList, label *label
                 if (*rs != 0)
                 {
                     errorPrint ((int) rs, lineCount);
-                    continue;
+                    //continue;
                 }
             }
             if (strstr (directive, "0"))
@@ -106,7 +108,7 @@ int firstPass(char *fileName, command *commandList, data *dataList, label *label
                 if (*rs != 0)
                 {
                     errorPrint ((int) rs, lineCount);
-                    continue;
+                   // continue;
                 }
 
             }
@@ -115,7 +117,8 @@ int firstPass(char *fileName, command *commandList, data *dataList, label *label
         }
     }
     fseek (inFile, 0, SEEK_SET);
-    while (fgets (currentLine, BUFFER_SIZE, inFile) != NULL)
+    lineCount = 0;
+    while (fgets (currentLine, BUFFER_SIZE, inFile) != '\0')
     {
         lineCount++;
 
@@ -130,15 +133,15 @@ int firstPass(char *fileName, command *commandList, data *dataList, label *label
         }
         if ((ifDirective (currentLine, rs) != NULL) || (ifGlobalDirective (currentLine, rs) != NULL))
         {
-            continue;
+            //continue;
         }
-        labelName = ifLabel (currentLine, rs);
+        labelName = ifThereIsLabel (currentLine, rs);
 
         verifyStringCommand (currentLine, rs);
         if (rs != 0)
         {
             errorPrint ((int) rs, lineCount);
-            continue;
+           // continue;
         }
         /*this section should be care about command line, with\without label*/
         if (labelFlag == 1)
@@ -154,7 +157,7 @@ int firstPass(char *fileName, command *commandList, data *dataList, label *label
         if (*rs != 0)
         {
             errorPrint ((int) rs, lineCount);
-            continue;
+            //continue;
         }
         IC = IC + commandList->wordAmount;
     }

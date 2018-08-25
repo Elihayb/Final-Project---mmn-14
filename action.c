@@ -3,8 +3,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include "action.h"
 #include "Data.h"
+#include "action.h"
 #include "parsing.h"
 #include "utilities.h"
 
@@ -152,7 +152,7 @@ int mov(char *firstOperand, char *secondOperand, label *labelList, registers *re
     return -1;
 }
 
-int cmp(char *firstOperand, char *secondOperand, label *labelList, registers *registers, data *dataList,registers *PSW)
+int cmp(char *firstOperand, char *secondOperand, label *labelList, registers *registers, data *dataList,struct registers *PSW)
 {
     int *rs[1];
     char *data1, *data2;

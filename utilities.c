@@ -82,9 +82,11 @@ int char_index(char *buffer, char chr) /* a function that returns the index of a
 }
 
 /*function check if buffer contain only spaces or tabs. return 0 if buffer contain another chars and 1 if empty*/
-int isEmpty(const char *s) {
-    while (*s != '\0') {
-        if (!isspace((unsigned char)*s))
+int isEmpty(const char *s)
+{
+    while (s[0] != '\0')
+    {
+        if (!isspace ((unsigned char) *s))
             return 0;
         s++;
     }
@@ -92,14 +94,14 @@ int isEmpty(const char *s) {
 }
 
 /*the function convert the binary array to decimal digit*/
-int convertToChar(char *buffer,int length)
+int convertToChar(char *buffer, int length)
 {
     int multiplier = 0;
     int i;
     int num;
     char *zero = "0";
     int sum = 0;
-    for(i = length - 1; i>=0; i--)
+    for (i = length - 1 ; i >= 0 ; i--)
     {
         if (strstr ((char *) buffer[i], zero))
         {
