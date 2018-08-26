@@ -159,7 +159,7 @@ int validLabel(label *list, char *labelName, int *rs)
 
     if (searchLabel (list, labelName) != NULL)
     {/*check if label name equal to any exist label name*/
-        *rs = -1;/*TO Do: write the correct error code*/
+        *rs = 1;
         return -1;/*label is not valid*/
     }
     for (i = 0 ; i < 16 ; i++)
@@ -167,7 +167,7 @@ int validLabel(label *list, char *labelName, int *rs)
 
         if (strcmp (actionTable[i].actionName, labelName) == 0)
         {
-            *rs = -1;/*TO Do: write the correct error code*/
+            *rs = 2;
             return -1;/*label is not valid*/
         }
     }/*check if label name equal to any register name*/
@@ -181,7 +181,7 @@ int validLabel(label *list, char *labelName, int *rs)
     if (((strcmp ("string", labelName) == 0)) || ((strcmp ("data", labelName) == 0)) ||
             ((strcmp ("entry", labelName) == 0)) || ((strcmp ("extern", labelName) == 0)))
     {
-        *rs = -1;/*TO Do: write the correct error code*/
+        *rs = 2;/*TO Do: write the correct error code*/
         return *rs;/*label is not valid*/
 
     }

@@ -73,11 +73,11 @@ char *ifThereIsLabel(char *buffer, int *RS)                                     
         return NULL;
 }
 
-/* this function chacks if a label is legal. the function returns 0 if not legal and 1 otherwise. */
+/* this function checks if a label is legal. the function returns 0 if not legal and 1 otherwise. */
 int ifLabel(char *string)
 {
     char *index = string;
-    while (index[0] != '\0')
+    while ((index[0] != '\0'))
     {
         if (index[0] == '\0')
             break;
@@ -140,7 +140,7 @@ char *ifDirective(char *buffer, int *RS)
 /* and the type of the directive: 0 for .entry and 1 for .extern */
 char *ifGlobalDirective(char *buffer, int *RS)
 {
-    int i = 0;                                                                  /* RS variable stands for error code. */
+    int i=0,flag = 0;                                                                  /* RS variable stands for error code. */
     char global_directive[20] = {'\0'}, type = '*';                                  /* string to store the directive */
     static char label[LABEL_SIZE] = {'\0'};                                              /* string to store the label */
     char *index = buffer;                                                                    /* pointer to the buffer */
@@ -168,9 +168,30 @@ start:
             *RS = 23;
             return NULL;
         }
-        while (index[0] == ' ')                                    /* advancing the index pointer to the label string */
+        while (index[0] == ' ')                                 /* advancing the index pointer to the label string */
+        {
             index++;
-        strcpy (label, index);                                                                   /* storing the label */
+        }
+            /*elihay: trim all blank char from label*/
+         i=0;
+        while ((index[0] != '\0'))
+        {
+            if (index[0] == ' '){
+                flag =1;/*if there is blank char the flag turn on to check if there is string after label */
+            }
+            if (((isdigit (index[0]))||(isalpha (index[0])))&&(flag == 0)){
+                label[i]= index[0];
+                i++;
+            }else if(((isdigit (index[0]))||(isalpha (index[0])))&&(flag == 1)){
+                *RS = 2;
+                return NULL;
+            }
+            index++;
+        }
+        label[i+1]='\0';
+        /*end of elihay fix*/
+
+        /*strcpy (label, index); */                                                                  /* storing the label */
         if ((ifLabel (label) != 1))                                   /* if the label isn't legal returning NULL */
         {
             *RS = 2;
