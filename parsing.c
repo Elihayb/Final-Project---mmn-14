@@ -23,6 +23,7 @@ char *ifThereIsLabel(char *buffer, int *RS)                                     
         int i, res = 0, spaceIndex = 0;                               /* res variable 1 if there is label and 0 otherwise */
         static char label[LABEL_SIZE] = {'\0'};
         label[0] = '\0';
+        memset (label,0,LABEL_SIZE);
         if (buffer[0] == ' ' || !(isalpha (buffer[0])))                                       /* testing the first column */
         {
             *RS = 3;
@@ -77,7 +78,7 @@ char *ifThereIsLabel(char *buffer, int *RS)                                     
 int ifLabel(char *string)
 {
     char *index = string;
-    while ((index[0] != '\0'))
+    while (index[0] != '\0')
     {
         if (index[0] == '\0')
             break;
@@ -144,6 +145,8 @@ char *ifGlobalDirective(char *buffer, int *RS)
     char global_directive[20] = {'\0'}, type = '*';                                  /* string to store the directive */
     static char label[LABEL_SIZE] = {'\0'};                                              /* string to store the label */
     char *index = buffer;                                                                    /* pointer to the buffer */
+
+    memset (label,0,LABEL_SIZE);/*remove all values from static array*/
     if (ifThereIsLabel (buffer, RS) == NULL)                               /* in case there is no label before the directive */
     {
 start:

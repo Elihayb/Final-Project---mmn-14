@@ -175,13 +175,13 @@ int validLabel(label *list, char *labelName, int *rs)
             (strcmp (labelName, "r3") == 0) || (strcmp (labelName, "r4") == 0) || (strcmp (labelName, "r5") == 0) ||
             (strcmp (labelName, "r6") == 0) || (strcmp (labelName, "r7") == 0) || (strcmp (labelName, "PSW") == 0))
     {
-        *rs = -1;/*TO Do: write the correct error code*/
+        *rs = 2;
         return *rs;/*label is not valid*/
     }/*check if label name equal to any directive name*/
     if (((strcmp ("string", labelName) == 0)) || ((strcmp ("data", labelName) == 0)) ||
             ((strcmp ("entry", labelName) == 0)) || ((strcmp ("extern", labelName) == 0)))
     {
-        *rs = 2;/*TO Do: write the correct error code*/
+        *rs = 2;
         return *rs;/*label is not valid*/
 
     }

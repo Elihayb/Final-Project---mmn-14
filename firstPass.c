@@ -32,7 +32,9 @@ int firstPass(char *fileName, command *commandList, data *dataList, label *label
     }
     while ((fgets (currentLine, BUFFER_SIZE, inFile)) != NULL)
     {
+        labelName = 0;
         labelFlag = 0;
+        directive = 0;
         lineCount++;
         if ((isEmpty (currentLine) == 1) || (ifComment (currentLine) == 1))
         {/*check if line is empty or comment*/
@@ -45,21 +47,21 @@ int firstPass(char *fileName, command *commandList, data *dataList, label *label
         }
         labelName = ifThereIsLabel (currentLine, rs);
         if (labelName != NULL)
-        {/*check if there is label*/
-            if (rs != 0)
-            {
-                errorPrint ((int) rs, lineCount);
-                //continue;
-            }
-            labelFlag = 1;
+            {/*check if there is label*/
+                if (*rs != 0)
+                {
+                    errorPrint ((int) rs, lineCount);
+                    continue;
+                }
+                labelFlag = 1;
         }
         if ((directive = ifDirective (currentLine, rs)) != NULL)
         {/*check if string or data directive*/
-            /*if (rs != 0)
+            if (*rs != 0)
             {
                 errorPrint ((int) rs, lineCount);
 
-			}*/
+            }
             if (strstr (directive, "string") == 0)
             {/*check if string directive*/
                 strOrNum = 0;
@@ -68,27 +70,27 @@ int firstPass(char *fileName, command *commandList, data *dataList, label *label
             {/*check if data directive*/
                 strOrNum = 1;
             }
-            addToLabelTable (labelList, labelName, DC, 0, rs);/*add label name to labels list*/
+            labelList= addToLabelTable (labelList, labelName, DC, 0, rs);/*add label name to labels list*/
             if (*rs != 0)
             {
                 errorPrint ((int) rs, lineCount);
-                //continue;
+                continue;
             }
-            addToDataTable (dataList, labelName, currentLine, DC, strOrNum, rs);/*add all data or str array to table*/
-            if (rs != 0)
+            *dataList = addToDataTable (dataList, labelName, currentLine, DC, strOrNum, rs);/*add all data or str array to table*/
+            if (*rs != 0)
             {
                 errorPrint ((int) rs, lineCount);
-                //continue;
+                continue;
             }
             DC = DC + dataList->sizeOfArray;
             continue;
         }
         if ((directive = ifGlobalDirective (currentLine, rs)) != NULL)
         {/*check if extern or entry directive*/
-            if (rs != 0)
+            if (*rs != 0)
             {
                 errorPrint ((int) rs, lineCount);
-                //continue;
+                continue;
             }
             labelName = (char *) malloc (strlen (directive - 1));
             for (i = 0 ; i < strlen (directive) - 1 ; i++)
@@ -99,22 +101,22 @@ int firstPass(char *fileName, command *commandList, data *dataList, label *label
             labelName[i] = '\0';
             if (strstr (directive, "1"))
             {/*1 is value for external directive*/
-                addToLabelTable (labelList, labelName, DC, 2, rs);
+               labelList = addToLabelTable (labelList, labelName, DC, 2, rs);
                 if (*rs != 0)
                 {
                     errorPrint ((int) rs, lineCount);
-                    //continue;
+                    continue;
                 }
                 DC = DC + 1;
                 continue;
             }
             if (strstr (directive, "0"))
             {/*0 is value for entry directive*/
-                addToLabelTable (labelList, labelName, DC, 1, rs);
+                labelList = addToLabelTable (labelList, labelName, DC, 1, rs);
                 if (*rs != 0)
                 {
                     errorPrint ((int) rs, lineCount);
-                    // continue;
+                    continue;
                 }
                 DC = DC + 1;
                 continue;
@@ -123,16 +125,16 @@ int firstPass(char *fileName, command *commandList, data *dataList, label *label
         }/*check if line contain command with label*/
         if ((verifyStringCommand (currentLine, rs) != NULL)&&(labelFlag == 1))
         {/*add only label to label list*/
-            addToLabelTable (labelList, labelName, IC, 0, rs);
+            labelList = addToLabelTable (labelList, labelName, IC, 0, rs);
             if (*rs != 0)
             {
                 errorPrint ((int) rs, lineCount);
-                // continue;
+                 continue;
             }
             IC = IC + 1;
             continue;
         }
-        if ((verifyStringCommand (currentLine, rs) != NULL)&&(labelFlag == 0))
+        if ((verifyStringCommand (currentLine, rs) != NULL) && (labelFlag == 0))
         {/*increase the IC value to save on correct counter*/
             IC = IC + 1;
             continue;
@@ -161,32 +163,23 @@ int firstPass(char *fileName, command *commandList, data *dataList, label *label
         labelName = ifThereIsLabel (currentLine, rs);
 
         verifyStringCommand (currentLine, rs);
-        if (rs != 0)
+        if (*rs != 0)
         {
             errorPrint ((int) rs, lineCount);
-            // continue;
+             continue;
         }
-        /*this section should be care about command line, with\without label*/
-        if (labelFlag == 1)
-        {
-            addToLabelTable (labelList, labelName, IC, 0, rs);
-            if (*rs != 0)
-            {
-                errorPrint ((int) rs, lineCount);
-                continue;
-            }
-        }
+
         addToCommandTable (commandList, labelList, IC, currentLine, rs);
         if (*rs != 0)
         {
             errorPrint ((int) rs, lineCount);
-            //continue;
+            continue;
         }
         IC = IC + commandList->wordAmount;
     }
     fclose (inFile);
     fclose (fout);
-    if (&rs != 0)
+    if (*rs != 0)
     {
         return -1;
     }
