@@ -145,7 +145,7 @@ data *newData();
  pointer to new label on the list.
  report success flag 0 if success, else -1.
  */
-data addToDataTable(data *dataTable, char *dataLabel, char *sourceCode, int address, int strOrNun, int *rs);
+data *addToDataTable(data *dataTable, char *dataLabel, char *sourceCode, int address, int strOrNun, int *rs);
 
 /*search data by address */
 data *searchData(data *dataList,int address);

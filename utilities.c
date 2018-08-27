@@ -103,7 +103,7 @@ int convertToChar(char *buffer, int length)
     int sum = 0;
     for (i = length - 1 ; i >= 0 ; i--)
     {
-        if (strstr (( char *)buffer[i], zero))
+        if (strstr ((char *) buffer[i], zero))
         {
             sum += (0 * (1 << multiplier++));
         }

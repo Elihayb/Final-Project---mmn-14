@@ -289,7 +289,7 @@ data *newData()
  pointer to new label on the list.
  report success flag 0 if success, else -1.
  */
-data addToDataTable(data *dataTable, char *dataLabel, char *sourceCode, int address, int strOrNun, int *rs)
+data *addToDataTable(data *dataTable, char *dataLabel, char *sourceCode, int address, int strOrNun, int *rs)
 {
     data *dt;
     int arraySize = 0;
@@ -299,7 +299,7 @@ data addToDataTable(data *dataTable, char *dataLabel, char *sourceCode, int addr
         if (verifyStringCommand (sourceCode, rs) == NULL)
         {
             *rs = -1;
-            return *dataTable;
+            return dataTable;
         }
         arraySize = strlen (verifyStringCommand (sourceCode, rs));
     }
@@ -308,7 +308,7 @@ data addToDataTable(data *dataTable, char *dataLabel, char *sourceCode, int addr
         if (verifyDataCommand (sourceCode, rs) == NULL)
         {
             *rs = -1;
-            return *dataTable;
+            return dataTable;
         }
         arraySize = verifyDataCommand (sourceCode, rs)[0];
     }
@@ -325,28 +325,31 @@ data addToDataTable(data *dataTable, char *dataLabel, char *sourceCode, int addr
             dt->binaryCode = buildDataWord (sourceCode, rs);
             dt->sizeOfArray = arraySize;
             dt->next = NULL;
-            return *dataTable;
+            return dataTable;
         }
         *rs = -1;
         free (dt);
-        return *dataTable;
+        return dataTable;
     }
     else
     {
-        *dataTable->next = addToDataTable (dataTable, dataLabel, sourceCode, address, strOrNun, rs);
+        dataTable->next = addToDataTable (dataTable, dataLabel, sourceCode, address, strOrNun, rs);
         if (rs)
         {
             rs = 0;
         }
-        return *dataTable;
+        return dataTable;
     }
 }
 
 /*search data by address */
-data *searchData(data *dataList,int address){
+data *searchData(data *dataList, int address)
+{
     data *dt = dataList;
-    while(dt !=NULL){
-        if (address == dt->address){
+    while (dt != NULL)
+    {
+        if (address == dt->address)
+        {
             return dt;
         }
         dt = dt->next;
@@ -366,7 +369,7 @@ command addToCommandTable(command *list, label *labelList, unsigned int address,
     }
     if (getActionID (sourceCode) == -1)
     {
-        *rs = 7;/*status 2 return error about un-exist action name*/
+        *rs = 7;/*status 7 return error about un-exist action name*/
         return *list;
     }
     if (ifCommand (sourceCode, labelList, rs) != 1)
@@ -408,9 +411,9 @@ command *newCommand()
     command *cmd = (command *) malloc (sizeof (command));
     if (cmd)
     {
-        cmd->machineCode[0] = '\0';
+        cmd->machineCode = 0;
         cmd->wordAmount = 0;
-        cmd->srcCode[0] = '\0';
+        cmd->srcCode = 0;
         cmd->decimalAddress = 0;
         cmd->next = NULL;
     }
@@ -427,7 +430,7 @@ int amountOfWord(char *sourceCode, label *labelList)
 {
 
     int actionCode;
-    int *rs = 0;
+    static int rs[1] = {0};
     char *operandName[3];/*array for operands and params - cannot be more than 2 operands or 1 operand and 2 params */
 
     actionCode = getActionID (sourceCode);
@@ -501,11 +504,12 @@ int *setARE(char *sourceCode, label *labelList)
 {
     int actionCode = getActionID (sourceCode);
     int amountOfWords = amountOfWord (sourceCode, labelList);
-    int i, *rs = 0;
+    int i;
+    static int rs[1] = {0};
     static int returnArrayCods[MAX_WORDS_PER_COMMAND];/*create static array to return the values*/
-    returnArrayCods[MAX_WORDS_PER_COMMAND] = 0;/*zero the static array for reuse*/
     char *operandName;
     label *lbl;
+    memset (returnArrayCods,0,MAX_WORDS_PER_COMMAND);/*zero the static array for reuse*/
 
     if (ifCommand (sourceCode, labelList, rs) != 1)
     {
@@ -740,7 +744,7 @@ char *registerWord(char *buffer, label *labelList, int numOfChildWord, int *rs)
     int typeAction = 0;
     int registerNum1, registerNum2 = 0;
 
-    if ((actionID == 9) || (actionID == 10) || (actionID == 13) && (numOfChildWord > 1))
+    if (((actionID == 9) || (actionID == 10) || (actionID == 13)) && (numOfChildWord > 1))
     {
         firstOperandName = getFirstParam (buffer);
         secondOperandName = getSecondParam (buffer);

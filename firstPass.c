@@ -17,7 +17,6 @@ int firstPass(char *fileName, command *commandList, data *dataList, label *label
     FILE *fout = NULL;/*for testing*/
     unsigned int lineCount = 0;
     int i, labelFlag = 0, strOrNum = 0;
-    rs[0] = 0;
     IC = 0;
     DC = 0;
 
@@ -35,6 +34,7 @@ int firstPass(char *fileName, command *commandList, data *dataList, label *label
         labelName = 0;
         labelFlag = 0;
         directive = 0;
+        rs[0] = 0;
         lineCount++;
         if ((isEmpty (currentLine) == 1) || (ifComment (currentLine) == 1))
         {/*check if line is empty or comment*/
@@ -75,8 +75,8 @@ int firstPass(char *fileName, command *commandList, data *dataList, label *label
             {
                 errorPrint ((int) rs, lineCount);
                 continue;
-            }
-            *dataList = addToDataTable (dataList, labelName, currentLine, DC, strOrNum, rs);/*add all data or str array to table*/
+            }/*TODO: data are not added to table - WHY???? */
+            dataList = addToDataTable (dataList, labelName, currentLine, DC, strOrNum, rs);/*add all data or str array to table*/
             if (*rs != 0)
             {
                 errorPrint ((int) rs, lineCount);
@@ -123,35 +123,40 @@ int firstPass(char *fileName, command *commandList, data *dataList, label *label
             }
 
         }/*check if line contain command with label*/
-        if ((verifyStringCommand (currentLine, rs) != NULL)&&(labelFlag == 1))
+        ifCommand (currentLine,labelList, rs);
+        if (((*rs == 10)&&(labelFlag == 1))||((*rs == 0)&&(labelFlag == 1)))
         {/*add only label to label list*/
             labelList = addToLabelTable (labelList, labelName, IC, 0, rs);
-            if (*rs != 0)
-            {
-                errorPrint ((int) rs, lineCount);
-                 continue;
-            }
-            IC = IC + 1;
+            IC = IC + amountOfWord (currentLine,labelList);
+            *rs =0;
+            continue;
+        }else if (*rs != 0)
+        {
+            errorPrint ((int) rs, lineCount);
             continue;
         }
-        if ((verifyStringCommand (currentLine, rs) != NULL) && (labelFlag == 0))
+        if (labelFlag == 0)/*there isn't label and we need only to increase IC counter*/
         {/*increase the IC value to save on correct counter*/
-            IC = IC + 1;
-            continue;
+            IC = IC + amountOfWord (currentLine,labelList);
         }
     }
+
+    if (*rs!=0){
+        return -1;/*first pass fail*/
+    }
+
     fseek (inFile, 0, SEEK_SET);
     lineCount = 0;
     IC = 0;
     while (fgets (currentLine, BUFFER_SIZE, inFile) != '\0')
     {
         lineCount++;
-
-        if ((strcmp (currentLine, "") == 0) || (ifComment (currentLine) == 1))
+        rs[0] = 0;
+        if ((isEmpty (currentLine) == 1) || (ifComment (currentLine) == 1))
         {/*check if line is empty or comment*/
             continue;
         }
-        if (matchingBrackets (currentLine) == 0)
+        if (matchingBrackets (currentLine) == 1)
         {/*check Brackets if matching*/
             errorPrint (7, lineCount);/*undefined instruction*/
             continue;
@@ -162,14 +167,14 @@ int firstPass(char *fileName, command *commandList, data *dataList, label *label
         }
         labelName = ifThereIsLabel (currentLine, rs);
 
-        verifyStringCommand (currentLine, rs);
+        ifCommand (currentLine,labelList, rs);
         if (*rs != 0)
         {
             errorPrint ((int) rs, lineCount);
              continue;
         }
-
-        addToCommandTable (commandList, labelList, IC, currentLine, rs);
+        /*TODO: there is exception in this code section - need to check that*/
+        *commandList = addToCommandTable (commandList, labelList, IC, currentLine, rs);
         if (*rs != 0)
         {
             errorPrint ((int) rs, lineCount);

@@ -23,7 +23,7 @@ char *ifThereIsLabel(char *buffer, int *RS)                                     
         int i, res = 0, spaceIndex = 0;                               /* res variable 1 if there is label and 0 otherwise */
         static char label[LABEL_SIZE] = {'\0'};
         label[0] = '\0';
-        memset (label,0,LABEL_SIZE);
+        memset (label, 0, LABEL_SIZE);
         if (buffer[0] == ' ' || !(isalpha (buffer[0])))                                       /* testing the first column */
         {
             *RS = 3;
@@ -141,12 +141,11 @@ char *ifDirective(char *buffer, int *RS)
 /* and the type of the directive: 0 for .entry and 1 for .extern */
 char *ifGlobalDirective(char *buffer, int *RS)
 {
-    int i=0,flag = 0;                                                                  /* RS variable stands for error code. */
+    int i = 0;                                                                  /* RS variable stands for error code. */
     char global_directive[20] = {'\0'}, type = '*';                                  /* string to store the directive */
     static char label[LABEL_SIZE] = {'\0'};                                              /* string to store the label */
-    char *index = buffer;                                                                    /* pointer to the buffer */
-
-    memset (label,0,LABEL_SIZE);/*remove all values from static array*/
+    char *index = buffer, *lblptr = label;                                                                    /* pointer to the buffer */
+    memset (label, 0, LABEL_SIZE);/*remove all values from static array*/
     if (ifThereIsLabel (buffer, RS) == NULL)                               /* in case there is no label before the directive */
     {
 start:
@@ -171,31 +170,18 @@ start:
             *RS = 23;
             return NULL;
         }
-        while (index[0] == ' ')                                 /* advancing the index pointer to the label string */
+        index = skipSpcaes (index);
+        while (index[0] != '\0' && strcmp (index, "\\n") != 0)
         {
-            index++;
-        }
-            /*elihay: trim all blank char from label*/
-         i=0;
-        while ((index[0] != '\0'))
-        {
-            if (index[0] == ' '){
-                flag =1;/*if there is blank char the flag turn on to check if there is string after label */
+            if (isalpha (index[0]) || isdigit (index[0]))
+            {
+                lblptr[0] = index[0];
+                lblptr++, index++;
             }
-            if (((isdigit (index[0]))||(isalpha (index[0])))&&(flag == 0)){
-                label[i]= index[0];
-                i++;
-            }else if(((isdigit (index[0]))||(isalpha (index[0])))&&(flag == 1)){
-                *RS = 2;
-                return NULL;
-            }
-            index++;
-        }
-        label[i+1]='\0';
-        /*end of elihay fix*/
-
-        /*strcpy (label, index); */                                                                  /* storing the label */
-        if ((ifLabel (label) != 1))                                   /* if the label isn't legal returning NULL */
+            else
+                index++;
+        }                                                                                         /* storing the label */
+        if ((ifLabel (label) != 1))                                        /* if the label isn't legal returning NULL */
         {
             *RS = 2;
             return NULL;
@@ -206,11 +192,8 @@ start:
     }
     else                                                             /* in case there is a label before the directive */
     {
-        fprintf (stderr, "Warning: Label at the beginning of the line.\n");                      /* sending a warning */
-        while (index[0] != ' ')                       /* making the index pointer to skip the label and point to the  */
-            index++;                                                                    /* beginning of the directive */
-        while (index[0] == ' ')
-            index++;
+        /*fprintf (stderr, "Warning: Label at the beginning of the line.\n");*/                      /* sending a warning */
+        index = nextStr (index);
         goto start;                             /* once the index skipped the label we proceed as we wood in the case */
     }                                      /* there was no label at the beginning and jumping back to the start label */
 }
@@ -314,7 +297,7 @@ char *verifyStringCommand(char *buffer, int *RS)
 
 int verifyOperand(int actionID, char *operandName, int dstOrSrcFlag, label *labelTable, int *rs)
 {
-
+    *rs = 0;
     label *lbl;
     int i, operand;
     action *actionTable = defineActionTable ();
@@ -433,7 +416,7 @@ char *getFirstOperand(char *buffer, int *rs)
     static char operand[MAX_LABEL];
     char *index = NULL;
     char *opIndex = operand;                                                       /* pointer to the operand variable */
-    operand[0] = '\0';
+    memset (operand,0,MAX_LABEL);
     action *acn = defineActionTable ();                                /* variable that contains all the action names */
     int i = 0;
     for (i = 0 ; i < 16 ; i++)                                                           /* searching for the command */
@@ -497,6 +480,7 @@ char *getSecondOperand(char *buffer)
     char *opIndex = operand;                                                       /* pointer to the operand variable */
     operand[0] = '\0';
     index = strstr (buffer, ",");                                                      /* pointing to the , character */
+    memset (operand,0,MAX_LABEL);
     if (index == NULL)                                                                  /* if there is no , character */
         return NULL;
     index++;
@@ -520,7 +504,7 @@ char *getFirstParam(char *buffer)
     static char param[MAX_LABEL];
     char *index = NULL;
     char *opIndex = param;                                                         /* pointer to the operand variable */
-    param[0] = '\0';
+    memset (param,0,MAX_LABEL);
     index = strstr (buffer, "(");                                                      /* pointing to the , character */
     if (index == NULL)                                                                  /* if there is no , character */
         return NULL;
@@ -548,17 +532,30 @@ char *getFirstParam(char *buffer)
 /* a function that returns the second param of an action and NULL if there is no first param */
 char *getSecondParam(char *buffer)
 {
-    static char *param;
+    static char param[MAX_LABEL];
+    char *temp;
+    int i=0;
+    memset (param,0,MAX_LABEL);
     if (getFirstParam (buffer) == NULL)                                                 /* if there is no first param */
         return NULL;
-    param = getSecondOperand (buffer);
-    if (param != NULL)
-        param[strlen (param) - 1] = '\0';
+    temp = getSecondOperand (buffer);
+    if (temp != NULL)
+    {
+        temp[strlen (temp) - 1] = '\0';
+        /*elihay: this while remove all irrelevant letters (like ')' or blank letters)*/
+        while((isalpha (temp[0]))||(isdigit (temp[0]))){
+            param[i]=temp[0];
+            temp++;
+            i++;
+        }
+        param[i]='\0';
+    }/*end of elihay section*/
     return param;
 }
 
 int ifCommand(char *buffer, label *labelList, int *rs)
 {
+    *rs=0;
     char command[BUFFER_SIZE] = {'\0'};
     char *index = buffer, *firstParam = NULL, *secondParam = NULL;
     int actionId;

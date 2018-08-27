@@ -1,5 +1,5 @@
 #include "parsing.h"
-#include "data.h"
+#include "Data.h"
 #include "utilities.h"
 #include "first_pass.h"
 #include "output_creation.h"
@@ -9,9 +9,9 @@
 int main(int argc, char *argv[])
 {
     static int rs[1] = {0};
-    label *labelList = NULL;
-    command *commandList = NULL;
-    data *dataList = NULL;
+    static label *labelList = NULL;
+    static command *commandList = NULL;
+     data *dataList = NULL;/*TODO: need to add static - but it fail in fgets in first pass*/
 	
     if (argc == 1)
     {
